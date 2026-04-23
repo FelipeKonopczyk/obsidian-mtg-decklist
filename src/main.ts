@@ -1,99 +1,233 @@
-import {App, Editor, MarkdownView, Modal, Notice, Plugin} from 'obsidian';
-import {DEFAULT_SETTINGS, MyPluginSettings, SampleSettingTab} from "./settings";
+import { Editor, MarkdownView, Notice, Plugin } from "obsidian";
+import { DEFAULT_SETTINGS, MtgDecklistSettingTab, type MtgDecklistSettings } from "./settings";
+import { CardCache } from "./scryfall/cache";
+import { ScryfallClient } from "./scryfall/client";
+import { SymbologyClient, type ScryfallSymbol } from "./scryfall/symbology";
+import { CardPreview } from "./ui/card-preview";
+import { createDecklistProcessor } from "./renderer/decklist-renderer";
+import { createComboProcessor } from "./renderer/combo-renderer";
+import { registerInlineProcessor } from "./renderer/inline-processor";
+import { createInlineEditorExtension } from "./renderer/inline-cm-extension";
+import { COMBO_BLOCK_LANG, DECKLIST_BLOCK_LANG } from "./utils/constants";
+import { parseDecklist } from "./parser/decklist-parser";
+import { toArenaImport, toMoxfieldText } from "./renderer/exporters";
+import type { CachedCardEntry } from "./scryfall/types";
+import { MoxfieldClient } from "./moxfield/client";
+import type { CachedMoxfieldDeck } from "./moxfield/types";
+import { extractMoxfieldId } from "./moxfield/url";
 
-// Remember to rename these classes and interfaces!
+interface PersistedData {
+	settings: MtgDecklistSettings;
+	cache: Record<string, CachedCardEntry>;
+	symbology?: Record<string, ScryfallSymbol>;
+	moxfield?: Record<string, CachedMoxfieldDeck>;
+}
 
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+export default class MtgDecklistPlugin extends Plugin {
+	settings!: MtgDecklistSettings;
+	cardCache!: CardCache;
+	client!: ScryfallClient;
+	symbology!: SymbologyClient;
+	preview!: CardPreview;
+	moxfield!: MoxfieldClient;
 
-	async onload() {
-		await this.loadSettings();
+	async onload(): Promise<void> {
+		const data = (await this.loadData()) as Partial<PersistedData> | null;
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, data?.settings ?? {});
+		this.cardCache = new CardCache(data?.cache ?? {});
+		this.symbology = new SymbologyClient(data?.symbology ?? {});
+		this.client = new ScryfallClient(this.cardCache);
+		this.moxfield = new MoxfieldClient(data?.moxfield ?? {});
+		this.preview = new CardPreview();
 
-		// This creates an icon in the left ribbon.
-		this.addRibbonIcon('dice', 'Sample', (evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
-		});
+		this.registerMarkdownCodeBlockProcessor(DECKLIST_BLOCK_LANG, createDecklistProcessor(this));
+		this.registerMarkdownCodeBlockProcessor(COMBO_BLOCK_LANG, createComboProcessor(this));
+		registerInlineProcessor(this);
+		this.registerEditorExtension(createInlineEditorExtension(this));
 
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status bar text');
+		this.addSettingTab(new MtgDecklistSettingTab(this.app, this));
 
-		// This adds a simple command that can be triggered anywhere
+		if (!this.symbology.hasAny()) {
+			void this.ensureSymbologyLoaded();
+		}
+
 		this.addCommand({
-			id: 'open-modal-simple',
-			name: 'Open modal (simple)',
-			callback: () => {
-				new SampleModal(this.app).open();
-			}
+			id: "clear-card-cache",
+			name: "Clear card cache",
+			callback: async () => {
+				await this.clearCardCache();
+				new Notice("MTG Decklist: card cache cleared");
+			},
 		});
-		// This adds an editor command that can perform some operation on the current editor instance
+
 		this.addCommand({
-			id: 'replace-selected',
-			name: 'Replace selected content',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				editor.replaceSelection('Sample editor command');
-			}
+			id: "insert-decklist-template",
+			name: "Insert Decklist template at cursor",
+			editorCallback: (editor: Editor, _view: MarkdownView) => {
+				editor.replaceSelection(DECKLIST_TEMPLATE);
+			},
 		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
+
 		this.addCommand({
-			id: 'open-modal-complex',
-			name: 'Open modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
-
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
-				}
-				return false;
-			}
+			id: "copy-decklist-as-moxfield",
+			name: "Copy Decklist under cursor as Moxfield text",
+			editorCheckCallback: (checking, editor) =>
+				this.copyDecklistUnderCursor(editor, checking, (parsed) => toMoxfieldText(parsed), "Moxfield text"),
 		});
 
-		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
-
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			new Notice("Click");
+		this.addCommand({
+			id: "copy-decklist-as-arena",
+			name: "Copy Decklist under cursor as Arena import",
+			editorCheckCallback: (checking, editor) =>
+				this.copyDecklistUnderCursor(editor, checking, (parsed) => toArenaImport(parsed), "Arena import"),
 		});
 
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+		this.addCommand({
+			id: "refresh-moxfield-deck",
+			name: "Refresh Moxfield deck under cursor",
+			editorCheckCallback: (checking, editor) => this.refreshMoxfieldUnderCursor(editor, checking),
+		});
 
+		this.addCommand({
+			id: "clear-moxfield-cache",
+			name: "Clear Moxfield deck cache",
+			callback: async () => {
+				await this.clearMoxfieldCache();
+				new Notice("MTG Decklist: Moxfield cache cleared");
+			},
+		});
 	}
 
-	onunload() {
+	onunload(): void {
+		this.preview?.destroy();
 	}
 
-	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData() as Partial<MyPluginSettings>);
+	async saveSettings(): Promise<void> {
+		await this.persist();
 	}
 
-	async saveSettings() {
-		await this.saveData(this.settings);
+	async persistCacheIfDirty(): Promise<void> {
+		const cardDirty = this.cardCache.consumeDirty();
+		const symDirty = this.symbology.consumeDirty();
+		const moxDirty = this.moxfield.consumeDirty();
+		if (cardDirty || symDirty || moxDirty) {
+			await this.persist();
+		}
+	}
+
+	async clearCardCache(): Promise<void> {
+		this.cardCache.clear();
+		await this.persist();
+	}
+
+	async clearMoxfieldCache(): Promise<void> {
+		this.moxfield.clear();
+		await this.persist();
+	}
+
+	async ensureSymbologyLoaded(): Promise<boolean> {
+		const loaded = await this.symbology.ensureLoaded();
+		await this.persistCacheIfDirty();
+		return loaded;
+	}
+
+	private async persist(): Promise<void> {
+		const data: PersistedData = {
+			settings: this.settings,
+			cache: this.cardCache.serialize(),
+			symbology: this.symbology.serialize(),
+			moxfield: this.moxfield.serialize(),
+		};
+		await this.saveData(data);
+	}
+
+	private refreshMoxfieldUnderCursor(editor: Editor, checking: boolean): boolean {
+		const block = findDecklistBlockAroundCursor(editor);
+		if (!block) return false;
+		const id = findMoxfieldIdInBlock(block);
+		if (!id) return false;
+		if (checking) return true;
+		this.moxfield.invalidate(id);
+		void this.persist();
+		new Notice("MTG Decklist: Moxfield deck cache cleared. Reopen the note or switch modes to refetch.");
+		return true;
+	}
+
+	private copyDecklistUnderCursor(
+		editor: Editor,
+		checking: boolean,
+		transform: (parsed: ReturnType<typeof parseDecklist>) => string,
+		label: string,
+	): boolean {
+		const block = findDecklistBlockAroundCursor(editor);
+		if (!block) return false;
+		if (checking) return true;
+		const parsed = parseDecklist(block);
+		const text = transform(parsed);
+		void navigator.clipboard.writeText(text).then(
+			() => new Notice(`MTG Decklist: copied as ${label}`),
+			() => new Notice("MTG Decklist: clipboard write failed"),
+		);
+		return true;
 	}
 }
 
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
+const DECKLIST_TEMPLATE = `\`\`\`decklist
+# Commander
+1 Atraxa, Praetors' Voice
 
-	onOpen() {
-		let {contentEl} = this;
-		contentEl.setText('Woah!');
-	}
+# Creatures
+4 Birds of Paradise
 
-	onClose() {
-		const {contentEl} = this;
-		contentEl.empty();
+# Lands
+10 Forest
+
+# Sideboard
+2 Negate
+\`\`\`
+`;
+
+function findMoxfieldIdInBlock(block: string): string | null {
+	for (const line of block.split(/\r?\n/)) {
+		const trimmed = line.trim();
+		if (!trimmed) continue;
+		const m = trimmed.match(/^(?:moxfield|source)\s*[:=]\s*(.+)$/i);
+		if (m) return extractMoxfieldId(m[1] ?? "");
 	}
+	return null;
+}
+
+function findDecklistBlockAroundCursor(editor: Editor): string | null {
+	const cursor = editor.getCursor();
+	const totalLines = editor.lineCount();
+
+	let start = -1;
+	for (let i = cursor.line; i >= 0; i--) {
+		const line = editor.getLine(i);
+		if (/^```\s*decklist\s*$/i.test(line)) {
+			start = i;
+			break;
+		}
+		if (/^```/.test(line) && i !== cursor.line) {
+			return null;
+		}
+	}
+	if (start === -1) return null;
+
+	let end = -1;
+	for (let i = start + 1; i < totalLines; i++) {
+		const line = editor.getLine(i);
+		if (/^```\s*$/.test(line)) {
+			end = i;
+			break;
+		}
+	}
+	if (end === -1) return null;
+	if (cursor.line < start || cursor.line > end) return null;
+
+	const lines: string[] = [];
+	for (let i = start + 1; i < end; i++) {
+		lines.push(editor.getLine(i));
+	}
+	return lines.join("\n");
 }

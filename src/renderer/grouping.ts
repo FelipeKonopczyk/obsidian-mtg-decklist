@@ -1,0 +1,129 @@
+import type { DecklistEntry, ParsedDecklist, Section } from "../parser/types";
+import type { ScryfallCard } from "../scryfall/types";
+import type { CardSortOrder, GroupingMode } from "../settings";
+
+export const TYPE_GROUP_ORDER = [
+	"Commander",
+	"Creature",
+	"Planeswalker",
+	"Battle",
+	"Instant",
+	"Sorcery",
+	"Artifact",
+	"Enchantment",
+	"Land",
+	"Other",
+];
+
+export interface ResolvedEntry {
+	entry: DecklistEntry;
+	card: ScryfallCard | null;
+}
+
+export interface ResolvedSection {
+	title: string;
+	kind: Section["kind"];
+	entries: ResolvedEntry[];
+}
+
+export function classifyByType(typeLine: string | undefined): string {
+	if (!typeLine) return "Other";
+	const t = typeLine.toLowerCase();
+	if (t.includes("creature")) return "Creature";
+	if (t.includes("planeswalker")) return "Planeswalker";
+	if (t.includes("battle")) return "Battle";
+	if (t.includes("instant")) return "Instant";
+	if (t.includes("sorcery")) return "Sorcery";
+	if (t.includes("artifact")) return "Artifact";
+	if (t.includes("enchantment")) return "Enchantment";
+	if (t.includes("land")) return "Land";
+	return "Other";
+}
+
+function shouldUseAuto(parsed: ParsedDecklist, mode: GroupingMode): boolean {
+	const onlyDefaultSection =
+		parsed.sections.length === 1 && parsed.sections[0]?.kind === "general" && parsed.sections[0]?.title === "Deck";
+	if (mode === "auto") return true;
+	if (mode === "manual") return false;
+	return onlyDefaultSection;
+}
+
+function resolveEntries(entries: DecklistEntry[], lookup: (name: string) => ScryfallCard | undefined): ResolvedEntry[] {
+	return entries.map((entry) => ({ entry, card: lookup(entry.name) ?? null }));
+}
+
+export function buildResolvedSections(
+	parsed: ParsedDecklist,
+	mode: GroupingMode,
+	sortOrder: CardSortOrder,
+	lookup: (name: string) => ScryfallCard | undefined,
+): ResolvedSection[] {
+	const useAuto = shouldUseAuto(parsed, mode);
+
+	const sideboards = parsed.sections.filter((s) => s.kind === "sideboard" || s.kind === "maybeboard");
+	const sideboardOut: ResolvedSection[] = sideboards.map((s) => ({
+		title: s.title,
+		kind: s.kind,
+		entries: sortEntries(resolveEntries(s.entries, lookup), sortOrder),
+	}));
+
+	const mainSections = parsed.sections.filter((s) => s.kind !== "sideboard" && s.kind !== "maybeboard");
+
+	if (!useAuto) {
+		const main = mainSections.map<ResolvedSection>((s) => ({
+			title: s.title,
+			kind: s.kind,
+			entries: sortEntries(resolveEntries(s.entries, lookup), sortOrder),
+		}));
+		return [...main, ...sideboardOut];
+	}
+
+	const commanderEntries: ResolvedEntry[] = [];
+	const buckets = new Map<string, ResolvedEntry[]>();
+
+	for (const section of mainSections) {
+		for (const entry of section.entries) {
+			const card = lookup(entry.name) ?? null;
+			const resolved: ResolvedEntry = { entry, card };
+			if (section.kind === "commander") {
+				commanderEntries.push(resolved);
+				continue;
+			}
+			const bucket = classifyByType(card?.type_line ?? entry.hints?.type_line);
+			const arr = buckets.get(bucket) ?? [];
+			arr.push(resolved);
+			buckets.set(bucket, arr);
+		}
+	}
+
+	const out: ResolvedSection[] = [];
+	if (commanderEntries.length > 0) {
+		out.push({ title: "Commander", kind: "commander", entries: sortEntries(commanderEntries, sortOrder) });
+	}
+	for (const groupName of TYPE_GROUP_ORDER) {
+		if (groupName === "Commander") continue;
+		const items = buckets.get(groupName);
+		if (items && items.length > 0) {
+			out.push({ title: groupName, kind: "general", entries: sortEntries(items, sortOrder) });
+		}
+	}
+	return [...out, ...sideboardOut];
+}
+
+function sortEntries(entries: ResolvedEntry[], order: CardSortOrder): ResolvedEntry[] {
+	if (order === "source") return entries;
+	const arr = [...entries];
+	arr.sort((a, b) => {
+		if (order === "cmc-name") {
+			const aCmc = a.card?.cmc ?? a.entry.hints?.cmc ?? 99;
+			const bCmc = b.card?.cmc ?? b.entry.hints?.cmc ?? 99;
+			if (aCmc !== bCmc) return aCmc - bCmc;
+		}
+		return a.entry.name.localeCompare(b.entry.name);
+	});
+	return arr;
+}
+
+export function sectionEntryCount(section: ResolvedSection): number {
+	return section.entries.reduce((sum, e) => sum + e.entry.quantity, 0);
+}

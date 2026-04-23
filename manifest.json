@@ -1,11 +1,10 @@
 {
-	"id": "sample-plugin",
-	"name": "Sample Plugin",
+	"id": "mtg-decklist",
+	"name": "MTG Decklist",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"description": "Render Magic: The Gathering decklists from fenced code blocks with Scryfall card data, hover/tap image previews, and deck stats.",
+	"author": "ekrizdis",
+	"authorUrl": "",
 	"isDesktopOnly": false
 }
