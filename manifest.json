@@ -6,5 +6,9 @@
 	"description": "Render Magic: The Gathering decklists from fenced code blocks with Scryfall card data, hover/tap image previews, and deck stats.",
 	"author": "ekrizdis",
 	"authorUrl": "",
+	"fundingUrl": {
+		"ko-fi": "https://ko-fi.com/ekrizdis",
+		"buy-me-a-coffee": "buymeacoffee.com/TheEkrizdis"
+	},
 	"isDesktopOnly": false
 }
