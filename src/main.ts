@@ -56,13 +56,13 @@ export default class MtgDecklistPlugin extends Plugin {
 			name: "Clear card cache",
 			callback: async () => {
 				await this.clearCardCache();
-				new Notice("MTG Decklist: card cache cleared");
+				new Notice("Card cache cleared");
 			},
 		});
 
 		this.addCommand({
 			id: "insert-decklist-template",
-			name: "Insert Decklist template at cursor",
+			name: "Insert decklist template at cursor",
 			editorCallback: (editor: Editor, _view: MarkdownView) => {
 				editor.replaceSelection(DECKLIST_TEMPLATE);
 			},
@@ -70,30 +70,30 @@ export default class MtgDecklistPlugin extends Plugin {
 
 		this.addCommand({
 			id: "copy-decklist-as-moxfield",
-			name: "Copy Decklist under cursor as Moxfield text",
+			name: "Moxfield: copy decklist under cursor as text",
 			editorCheckCallback: (checking, editor) =>
 				this.copyDecklistUnderCursor(editor, checking, (parsed) => toMoxfieldText(parsed), "Moxfield text"),
 		});
 
 		this.addCommand({
 			id: "copy-decklist-as-arena",
-			name: "Copy Decklist under cursor as Arena import",
+			name: "Arena: copy decklist under cursor as import",
 			editorCheckCallback: (checking, editor) =>
 				this.copyDecklistUnderCursor(editor, checking, (parsed) => toArenaImport(parsed), "Arena import"),
 		});
 
 		this.addCommand({
 			id: "refresh-moxfield-deck",
-			name: "Refresh Moxfield deck under cursor",
+			name: "Moxfield: refresh deck under cursor",
 			editorCheckCallback: (checking, editor) => this.refreshMoxfieldUnderCursor(editor, checking),
 		});
 
 		this.addCommand({
 			id: "clear-moxfield-cache",
-			name: "Clear Moxfield deck cache",
+			name: "Moxfield: clear deck cache",
 			callback: async () => {
 				await this.clearMoxfieldCache();
-				new Notice("MTG Decklist: Moxfield cache cleared");
+				new Notice("Moxfield cache cleared");
 			},
 		});
 	}
@@ -149,7 +149,7 @@ export default class MtgDecklistPlugin extends Plugin {
 		if (checking) return true;
 		this.moxfield.invalidate(id);
 		void this.persist();
-		new Notice("MTG Decklist: Moxfield deck cache cleared. Reopen the note or switch modes to refetch.");
+		new Notice("Moxfield deck cache cleared. Reopen the note or switch modes to refetch.");
 		return true;
 	}
 
@@ -165,8 +165,8 @@ export default class MtgDecklistPlugin extends Plugin {
 		const parsed = parseDecklist(block);
 		const text = transform(parsed);
 		void navigator.clipboard.writeText(text).then(
-			() => new Notice(`MTG Decklist: copied as ${label}`),
-			() => new Notice("MTG Decklist: clipboard write failed"),
+			() => new Notice(`Copied as ${label}`),
+			() => new Notice("Clipboard write failed"),
 		);
 		return true;
 	}

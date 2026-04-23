@@ -22,21 +22,6 @@ export default tseslint.config(
 		},
 	},
 	...obsidianmd.configs.recommended,
-	{
-		plugins: {
-			obsidianmd,
-		},
-		rules: {
-			"obsidianmd/ui/sentence-case": [
-				"error",
-				{
-					enforceCamelCaseLower: true,
-					brands: ["Moxfield", "Arena", "Scryfall", "Decklist"],
-					acronyms: ["MTG", "MTGO", "USD", "EUR", "CMC", "CMDR"],
-				},
-			],
-		},
-	},
 	globalIgnores([
 		"node_modules",
 		"dist",

@@ -146,7 +146,7 @@ function renderRemoteControls(parent: HTMLElement, options: RenderDeckOptions): 
 		});
 		link.setAttribute("target", "_blank");
 		link.setAttribute("rel", "noopener");
-		link.setAttribute("title", "Open this deck on Moxfield");
+		link.setAttribute("title", "Moxfield: open this deck");
 	}
 
 	if (options.onRefresh) {

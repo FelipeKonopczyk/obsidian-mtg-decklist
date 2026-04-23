@@ -79,7 +79,7 @@ export class MtgDecklistSettingTab extends PluginSettingTab {
 			.addDropdown((dd) =>
 				dd
 					.addOption("name", "Name (alphabetical)")
-					.addOption("cmc-name", "CMC, then name")
+					.addOption("cmc-name", "Mana value, then name")
 					.addOption("source", "Source (as typed)")
 					.setValue(this.plugin.settings.cardSortOrder)
 					.onChange(async (value) => {
@@ -198,7 +198,7 @@ export class MtgDecklistSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Moxfield cache lifetime (minutes)")
 			.setDesc(
-				"How long fetched Moxfield decks stay cached before they're refetched. Use the refresh button on a deck to force a refresh sooner.",
+				"Moxfield decks are cached for this long before being refetched. Use the refresh button on a deck to force a refresh sooner.",
 			)
 			.addText((text) =>
 				text
@@ -235,7 +235,7 @@ export class MtgDecklistSettingTab extends PluginSettingTab {
 			.setDesc(`Cached decks: ${moxfieldSize}`)
 			.addButton((btn) =>
 				btn
-					.setButtonText("Clear Moxfield cache")
+					.setButtonText("Clear cache")
 					.setWarning()
 					.onClick(async () => {
 						await this.plugin.clearMoxfieldCache();

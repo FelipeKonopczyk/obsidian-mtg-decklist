@@ -108,7 +108,7 @@ function renderRemoteError(
 
 	const meta = box.createDiv({ cls: "mtg-decklist-remote-error-meta" });
 	const link = meta.createEl("a", {
-		text: "Open on Moxfield",
+		text: "Moxfield: open deck",
 		href: moxfieldDeckUrl(source.id),
 	});
 	link.setAttribute("target", "_blank");
