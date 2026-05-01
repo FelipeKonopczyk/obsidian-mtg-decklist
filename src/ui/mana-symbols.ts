@@ -1,3 +1,4 @@
+import type { ScryfallCard } from "../scryfall/types";
 import type { SymbologyClient } from "../scryfall/symbology";
 
 const SYMBOL_LABELS: Record<string, string> = {
@@ -70,16 +71,85 @@ function renderSingleSymbol(parent: HTMLElement, inner: string, symbology: Symbo
 	span.setAttribute("title", label);
 }
 
-export function renderManaCost(parent: HTMLElement, manaCost: string | undefined, symbology: SymbologyClient | null): void {
-	if (!manaCost) return;
+function appendManaSymbols(parent: HTMLElement, manaCost: string, symbology: SymbologyClient | null): void {
 	const tokens = manaCost.match(/\{([^}]+)\}/g);
 	if (!tokens) return;
-
-	const wrap = parent.createSpan({ cls: "mtg-mana-cost" });
 	for (const raw of tokens) {
 		const inner = raw.slice(1, -1);
-		renderSingleSymbol(wrap, inner, symbology);
+		renderSingleSymbol(parent, inner, symbology);
 	}
+}
+
+export function renderManaCost(parent: HTMLElement, manaCost: string | undefined, symbology: SymbologyClient | null): void {
+	if (!manaCost) return;
+	if (!/\{[^}]+\}/.test(manaCost)) return;
+	const wrap = parent.createSpan({ cls: "mtg-mana-cost" });
+	appendManaSymbols(wrap, manaCost, symbology);
+}
+
+// Layouts where every face has its own castable mana cost and we want to show
+// them all (joined by a `//` separator).
+const MULTI_FACE_LAYOUTS = new Set(["modal_dfc", "split"]);
+
+// Layouts where the card is cast for the front face's cost from hand; we hide
+// the back face's cost (e.g. Adventure's instant/sorcery half, transform DFC
+// back, flip cards, meld results).
+const FRONT_FACE_ONLY_LAYOUTS = new Set([
+	"adventure",
+	"transform",
+	"flip",
+	"meld",
+	"battle",
+	"reversible_card",
+]);
+
+export function renderCardManaCost(
+	parent: HTMLElement,
+	card: ScryfallCard,
+	symbology: SymbologyClient | null,
+): boolean {
+	const layout = card.layout;
+	const faces = card.card_faces ?? [];
+
+	if (layout && MULTI_FACE_LAYOUTS.has(layout) && faces.length >= 2) {
+		const costs = faces.map((f) => f.mana_cost?.trim() ?? "").filter((c) => c.length > 0);
+		if (costs.length >= 2) {
+			const wrap = parent.createSpan({ cls: "mtg-mana-cost mtg-mana-cost-multi" });
+			for (let i = 0; i < costs.length; i++) {
+				if (i > 0) {
+					const sep = wrap.createSpan({ cls: "mtg-mana-cost-separator", text: "//" });
+					sep.setAttribute("aria-hidden", "true");
+				}
+				appendManaSymbols(wrap, costs[i] ?? "", symbology);
+			}
+			return true;
+		}
+		if (costs.length === 1) {
+			renderManaCost(parent, costs[0], symbology);
+			return true;
+		}
+	}
+
+	if (layout && FRONT_FACE_ONLY_LAYOUTS.has(layout)) {
+		const front = faces[0]?.mana_cost;
+		if (front && front.length > 0) {
+			renderManaCost(parent, front, symbology);
+			return true;
+		}
+	}
+
+	if (card.mana_cost && card.mana_cost.length > 0) {
+		renderManaCost(parent, card.mana_cost, symbology);
+		return true;
+	}
+
+	const fallbackFront = faces[0]?.mana_cost;
+	if (fallbackFront && fallbackFront.length > 0) {
+		renderManaCost(parent, fallbackFront, symbology);
+		return true;
+	}
+
+	return false;
 }
 
 const COLOR_PIP_ORDER = ["W", "U", "B", "R", "G"];

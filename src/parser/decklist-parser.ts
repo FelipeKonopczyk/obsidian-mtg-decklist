@@ -9,7 +9,7 @@ import type {
 	SectionKind,
 } from "./types";
 
-const DEFAULT_SECTION_TITLE = "Deck";
+export const DEFAULT_SECTION_TITLE = "Deck";
 
 const VALID_GROUP_VALUES = new Set<DecklistDirectives["group"]>(["auto", "manual", "respect-manual"]);
 const VALID_SORT_VALUES = new Set<DecklistDirectives["sort"]>(["name", "cmc-name", "source"]);

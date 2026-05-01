@@ -15,7 +15,8 @@ const COLOR_ORDER = ["W", "U", "B", "R", "G"];
 const RENDER_TOKEN_PROP = "__mtgRenderToken";
 let renderCounter = 0;
 
-const PROGRESS_RERENDER_INTERVAL_MS = 5000;
+const PROGRESS_RERENDER_MIN_INTERVAL_MS = 4000;
+const PROGRESS_RERENDER_MIN_NEW_CARDS = 6;
 
 interface ContainerWithToken extends HTMLElement {
 	[RENDER_TOKEN_PROP]?: number;
@@ -317,6 +318,20 @@ function renderStats(container: HTMLElement, stats: DeckStats, plugin: MtgDeckli
 			row.createSpan({ cls: "mtg-type-count", text: `${t.count}` });
 		}
 	}
+
+	if (stats.tagDistribution.length > 0) {
+		const tagWrap = wrap.createDiv({ cls: "mtg-stats-tags" });
+		tagWrap.createDiv({ cls: "mtg-stats-title", text: "Roles" });
+		for (const t of stats.tagDistribution) {
+			const row = tagWrap.createDiv({ cls: "mtg-tag-row" });
+			const icon = row.createSpan({ cls: `mtg-tag-icon mtg-card-tag-${t.id}` });
+			setIcon(icon, t.icon);
+			icon.setAttribute("aria-hidden", "true");
+			const name = row.createSpan({ cls: "mtg-tag-name", text: t.shortLabel });
+			name.setAttribute("title", t.label);
+			row.createSpan({ cls: "mtg-tag-count", text: `${t.count}` });
+		}
+	}
 }
 
 function collectPendingNames(sections: ResolvedSection[]): string[] {
@@ -360,19 +375,28 @@ async function triggerAsyncWork(
 
 	const banner = renderCardLoadingBanner(container, pending.length);
 
-	let fetched = 0;
-	let lastRerenderAt = Date.now();
+	let attempts = 0;
+	let successes = 0;
+	const startedAt = Date.now();
 
 	for (const name of pending) {
 		if (isCancelled()) return;
 		const card = await plugin.client.fetchCardByName(name);
 		if (isCancelled()) return;
-		fetched++;
-		if (card) changed = true;
-		updateCardLoadingBanner(banner, pending.length - fetched, pending.length);
+		attempts++;
+		if (card) {
+			successes++;
+			changed = true;
+		}
+		updateCardLoadingBanner(banner, successes, pending.length, attempts);
 
-		const remaining = pending.length - fetched;
-		if (remaining > 0 && Date.now() - lastRerenderAt >= PROGRESS_RERENDER_INTERVAL_MS) {
+		const remaining = pending.length - successes;
+		const elapsed = Date.now() - startedAt;
+		if (
+			remaining > 0 &&
+			successes >= PROGRESS_RERENDER_MIN_NEW_CARDS &&
+			elapsed >= PROGRESS_RERENDER_MIN_INTERVAL_MS
+		) {
 			await plugin.persistCacheIfDirty();
 			if (isCancelled()) return;
 			renderDeckView(parsed, container, plugin, options);
@@ -423,8 +447,18 @@ function renderCardLoadingBanner(container: HTMLElement, total: number): CardLoa
 	};
 }
 
-function updateCardLoadingBanner(banner: CardLoadingBanner, remaining: number, total: number): void {
-	const fetched = total - remaining;
-	banner.label.textContent =
-		remaining > 0 ? `Loading ${fetched} / ${total} cards…` : `Loaded ${total} cards`;
+function updateCardLoadingBanner(
+	banner: CardLoadingBanner,
+	successes: number,
+	total: number,
+	attempts: number,
+): void {
+	const remaining = total - successes;
+	if (remaining <= 0) {
+		banner.label.textContent = `Loaded ${total} cards`;
+		return;
+	}
+	const failed = attempts - successes;
+	const base = `Loading ${successes} / ${total} cards…`;
+	banner.label.textContent = failed > 0 ? `${base} (${failed} unavailable)` : base;
 }

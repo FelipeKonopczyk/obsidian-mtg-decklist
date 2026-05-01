@@ -1,12 +1,14 @@
 import { MarkdownPostProcessorContext } from "obsidian";
 import type MtgDecklistPlugin from "../main";
 import { parseCombo } from "../parser/combo-parser";
-import type { ParsedCombo } from "../parser/combo-types";
+import type { ComboLine, ParsedCombo } from "../parser/combo-types";
 import { renderManaCost } from "../ui/mana-symbols";
 import { createInlineCardLink } from "./inline-processor";
 
 const MANA_TOKEN_RE = /\{([A-Za-z0-9/]+)\}/g;
 const CARD_TOKEN_RE = /`mtg:([^`\n]+)`|\[([^\]]+)\]\(mtg:([^)]+)\)/gi;
+
+let comboLoopMarkerSeq = 0;
 
 export function createComboProcessor(plugin: MtgDecklistPlugin) {
 	return (source: string, el: HTMLElement, _ctx: MarkdownPostProcessorContext) => {
@@ -26,7 +28,14 @@ export function renderComboView(combo: ParsedCombo, container: HTMLElement, plug
 	}
 
 	const header = container.createDiv({ cls: "mtg-combo-header" });
-	header.createDiv({ cls: "mtg-combo-name", text: combo.name || "Untitled combo" });
+	const titleRow = header.createDiv({ cls: "mtg-combo-title-row" });
+	titleRow.createDiv({ cls: "mtg-combo-name", text: combo.name || "Untitled combo" });
+	if (combo.infinite === true) {
+		const inf = titleRow.createSpan({ cls: "mtg-combo-infinite-badge" });
+		inf.setText("∞");
+		inf.setAttribute("title", "Infinite combo");
+		inf.setAttribute("aria-label", "Infinite combo");
+	}
 	if (combo.result) {
 		const result = header.createDiv({ cls: "mtg-combo-result" });
 		result.createSpan({ cls: "mtg-combo-result-label", text: "Result" });
@@ -36,12 +45,26 @@ export function renderComboView(combo: ParsedCombo, container: HTMLElement, plug
 
 	const body = container.createDiv({ cls: "mtg-combo-body" });
 
-	if (combo.prerequisites.length > 0) {
-		renderListSection(body, "Prerequisites", "mtg-combo-section-prereqs", combo.prerequisites, plugin, "•");
+	const hasSetup =
+		combo.battlefield.length > 0 || combo.hand.length > 0 || combo.prerequisites.length > 0;
+	const hasSteps = combo.steps.length > 0;
+
+	if (hasSetup) {
+		const setup = body.createDiv({ cls: "mtg-combo-section mtg-combo-section-setup" });
+		if (combo.battlefield.length > 0) {
+			renderSubsection(setup, "Battlefield", "mtg-combo-subsection-battlefield", combo.battlefield, plugin);
+		}
+		if (combo.hand.length > 0) {
+			renderSubsection(setup, "Hand", "mtg-combo-subsection-hand", combo.hand, plugin);
+		}
+		if (combo.prerequisites.length > 0) {
+			renderSubsection(setup, "Prerequisites", "mtg-combo-subsection-prereqs", combo.prerequisites, plugin);
+		}
 	}
 
-	if (combo.steps.length > 0) {
-		renderListSection(body, "Steps", "mtg-combo-section-steps", combo.steps, plugin, "ordered");
+	if (hasSteps) {
+		const stepsCls = hasSetup ? "mtg-combo-section-steps" : "mtg-combo-section-steps mtg-combo-section-steps-wide";
+		renderListSection(body, "Steps", stepsCls, combo.steps, plugin, "ordered");
 	}
 
 	if (combo.loop.length > 0) {
@@ -58,6 +81,84 @@ export function renderComboView(combo: ParsedCombo, container: HTMLElement, plug
 
 	if (combo.notes.length > 0) {
 		renderListSection(body, "Notes", "mtg-combo-section-notes", combo.notes, plugin, "•");
+	}
+
+	if (combo.lines.length > 0) {
+		renderLinesSection(container, combo.lines, plugin);
+	}
+}
+
+function renderSubsection(
+	parent: HTMLElement,
+	title: string,
+	cls: string,
+	items: string[],
+	plugin: MtgDecklistPlugin,
+	marker: "•" | "ordered" = "•",
+): void {
+	const sub = parent.createDiv({ cls: `mtg-combo-subsection ${cls}` });
+	sub.createDiv({ cls: "mtg-combo-subsection-title", text: title });
+	const list = sub.createEl(marker === "ordered" ? "ol" : "ul", {
+		cls: marker === "ordered" ? "mtg-combo-list mtg-combo-list-ordered" : "mtg-combo-list mtg-combo-list-bullet",
+	});
+	for (const item of items) {
+		const li = list.createEl("li", { cls: "mtg-combo-item" });
+		renderRichText(li, item, plugin);
+	}
+}
+
+function renderLinesSection(parent: HTMLElement, lines: ComboLine[], plugin: MtgDecklistPlugin): void {
+	const wrap = parent.createDiv({ cls: "mtg-combo-lines" });
+	wrap.createDiv({ cls: "mtg-combo-section-title", text: "Lines" });
+	const list = wrap.createDiv({ cls: "mtg-combo-lines-list" });
+	for (let i = 0; i < lines.length; i++) {
+		renderLineCard(list, lines[i] as ComboLine, i + 1, plugin);
+	}
+}
+
+function renderLineCard(
+	parent: HTMLElement,
+	line: ComboLine,
+	index: number,
+	plugin: MtgDecklistPlugin,
+): void {
+	const card = parent.createDiv({ cls: "mtg-combo-line" });
+
+	const headerEl = card.createDiv({ cls: "mtg-combo-line-header" });
+	headerEl.createSpan({ cls: "mtg-combo-line-badge", text: `Line ${index}` });
+	if (line.name) {
+		headerEl.createSpan({ cls: "mtg-combo-line-sep", text: "—" });
+		const nameEl = headerEl.createSpan({ cls: "mtg-combo-line-name" });
+		renderRichText(nameEl, line.name, plugin);
+	}
+	if (line.infinite === true) {
+		const inf = headerEl.createSpan({ cls: "mtg-combo-infinite-badge mtg-combo-infinite-badge-line" });
+		inf.setText("∞");
+		inf.setAttribute("title", "Infinite line");
+		inf.setAttribute("aria-label", "Infinite line");
+	}
+
+	const body = card.createDiv({ cls: "mtg-combo-line-body" });
+
+	if (line.battlefield.length > 0) {
+		renderSubsection(body, "Battlefield", "mtg-combo-subsection-battlefield", line.battlefield, plugin);
+	}
+	if (line.hand.length > 0) {
+		renderSubsection(body, "Hand", "mtg-combo-subsection-hand", line.hand, plugin);
+	}
+	if (line.prerequisites.length > 0) {
+		renderSubsection(body, "Prerequisites", "mtg-combo-subsection-prereqs", line.prerequisites, plugin);
+	}
+	if (line.steps.length > 0) {
+		renderSubsection(body, "Steps", "mtg-combo-subsection-steps", line.steps, plugin, "ordered");
+	}
+	if (line.loop.length > 0) {
+		renderLoopSection(body, line.loop, line.breaks, plugin);
+	} else if (line.breaks.length > 0) {
+		renderListSection(body, "Break", "mtg-combo-section-break", line.breaks, plugin, "•");
+	}
+	if (line.notes.length > 0) {
+		renderSubsection(body, "Notes", "mtg-combo-subsection-notes", line.notes, plugin);
 	}
 }
 
@@ -114,7 +215,8 @@ function renderLoopSection(
 		stepEls.push(box);
 	}
 
-	scheduleArcLayout(flowWrap, arc, stepEls);
+	const markerId = `mtg-combo-loop-arrowhead-${comboLoopMarkerSeq++}`;
+	scheduleArcLayout(flowWrap, arc, stepEls, markerId);
 
 	if (breaks.length > 0) {
 		const breakWrap = section.createDiv({ cls: "mtg-combo-loop-breaks" });
@@ -127,7 +229,7 @@ function renderLoopSection(
 	}
 }
 
-function scheduleArcLayout(wrap: HTMLElement, arc: SVGSVGElement, stepEls: HTMLElement[]): void {
+function scheduleArcLayout(wrap: HTMLElement, arc: SVGSVGElement, stepEls: HTMLElement[], markerId: string): void {
 	if (stepEls.length < 2) {
 		arc.setAttribute("width", "0");
 		arc.setAttribute("height", "0");
@@ -157,7 +259,7 @@ function scheduleArcLayout(wrap: HTMLElement, arc: SVGSVGElement, stepEls: HTMLE
 
 		const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
 		const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
-		marker.setAttribute("id", "mtg-combo-loop-arrowhead");
+		marker.setAttribute("id", markerId);
 		marker.setAttribute("viewBox", "0 0 10 10");
 		marker.setAttribute("refX", "8");
 		marker.setAttribute("refY", "5");
@@ -176,7 +278,7 @@ function scheduleArcLayout(wrap: HTMLElement, arc: SVGSVGElement, stepEls: HTMLE
 		path.setAttribute("d", d);
 		path.setAttribute("fill", "none");
 		path.setAttribute("class", "mtg-combo-loop-arc-path");
-		path.setAttribute("marker-end", "url(#mtg-combo-loop-arrowhead)");
+		path.setAttribute("marker-end", `url(#${markerId})`);
 		arc.appendChild(path);
 	};
 

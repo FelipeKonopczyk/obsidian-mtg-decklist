@@ -4,7 +4,11 @@ export const SCRYFALL_NAMED_FUZZY = `${SCRYFALL_API_BASE}/cards/named?fuzzy=`;
 export const DECKLIST_BLOCK_LANG = "decklist";
 export const COMBO_BLOCK_LANG = "combo";
 
-export const SCRYFALL_REQUEST_SPACING_MS = 100;
+export const SCRYFALL_REQUEST_SPACING_MS = 150;
+
+export const SCRYFALL_RETRY_MAX_ATTEMPTS = 3;
+export const SCRYFALL_RETRY_BACKOFF_BASE_MS = 1000;
+export const SCRYFALL_RETRY_BACKOFF_MAX_MS = 15000;
 
 export const PLUGIN_USER_AGENT = "Obsidian-MTG-Decklist/1.0.0";
 

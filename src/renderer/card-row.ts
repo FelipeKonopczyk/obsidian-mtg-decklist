@@ -1,5 +1,5 @@
 import { Platform, setIcon } from "obsidian";
-import { renderManaCost } from "../ui/mana-symbols";
+import { renderCardManaCost, renderManaCost } from "../ui/mana-symbols";
 import type { CardPreview } from "../ui/card-preview";
 import type { SymbologyClient } from "../scryfall/symbology";
 import { debounce } from "../utils/debounce";
@@ -96,10 +96,8 @@ export function renderCardRow(parent: HTMLElement, resolved: ResolvedEntry, opts
 		setIcon(placeholder, "tag");
 	}
 
-	if (card?.mana_cost) {
-		renderManaCost(row, card.mana_cost, opts.symbology);
-	} else if (card?.card_faces?.[0]?.mana_cost) {
-		renderManaCost(row, card.card_faces[0].mana_cost, opts.symbology);
+	if (card) {
+		renderCardManaCost(row, card, opts.symbology);
 	} else if (entry.hints?.mana_cost) {
 		renderManaCost(row, entry.hints.mana_cost, opts.symbology);
 	}

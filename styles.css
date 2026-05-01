@@ -266,6 +266,19 @@
 	align-items: center;
 }
 
+.mtg-mana-cost-multi {
+	gap: 0.15em;
+}
+
+.mtg-mana-cost-separator {
+	color: var(--text-muted);
+	font-size: 0.85em;
+	font-weight: 600;
+	padding: 0 0.05em;
+	letter-spacing: -0.05em;
+	opacity: 0.7;
+}
+
 .mtg-color-pips {
 	display: inline-flex;
 	gap: 2px;
@@ -359,8 +372,8 @@
 /* Stats panel */
 .mtg-stats {
 	display: grid;
-	grid-template-columns: 3fr 4fr 3fr;
-	gap: 0.8em 1.4em;
+	grid-template-columns: 3fr 4fr 2fr 2fr;
+	gap: 0.8em 1.2em;
 	padding-top: 0.6em;
 	margin-top: 0.6em;
 	border-top: 1px solid var(--background-modifier-border);
@@ -380,7 +393,8 @@
 	align-self: start;
 }
 
-.mtg-stats-types {
+.mtg-stats-types,
+.mtg-stats-tags {
 	justify-self: center;
 }
 
@@ -389,7 +403,8 @@
 		grid-template-columns: 1fr;
 	}
 	.mtg-stats-colors,
-	.mtg-stats-types {
+	.mtg-stats-types,
+	.mtg-stats-tags {
 		justify-self: start;
 	}
 }
@@ -545,6 +560,51 @@
 	text-align: right;
 }
 
+.mtg-stats-tags {
+	display: inline-grid;
+	grid-template-columns: max-content max-content max-content;
+	column-gap: 0.5em;
+	row-gap: 0.05em;
+	width: fit-content;
+	align-self: start;
+}
+
+.mtg-stats-tags .mtg-stats-title {
+	grid-column: 1 / -1;
+	margin-bottom: 0.3em;
+	text-align: center;
+}
+
+.mtg-tag-row {
+	display: contents;
+	font-size: 0.85em;
+}
+
+.mtg-tag-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 1em;
+	height: 1em;
+	color: var(--text-muted);
+}
+
+.mtg-tag-icon .svg-icon,
+.mtg-tag-icon svg {
+	width: 1em;
+	height: 1em;
+}
+
+.mtg-tag-name {
+	color: var(--text-normal);
+}
+
+.mtg-tag-count {
+	color: var(--text-muted);
+	font-variant-numeric: tabular-nums;
+	text-align: right;
+}
+
 /* Inline mana symbols rendered in body text */
 .mtg-inline-mana {
 	display: inline-flex;
@@ -595,6 +655,10 @@
 /* ============================================================ */
 
 .mtg-combo {
+	--mtg-combo-battlefield: #f9a825;
+	--mtg-combo-hand: #2196f3;
+	--mtg-combo-prereqs: #78909c;
+	--mtg-combo-line: var(--text-accent);
 	border: 1px solid var(--background-modifier-border);
 	border-radius: 8px;
 	padding: 0.9em 1em;
@@ -631,11 +695,37 @@
 	border-bottom: 1px solid var(--background-modifier-border);
 }
 
+.mtg-combo-title-row {
+	display: flex;
+	align-items: baseline;
+	flex-wrap: wrap;
+	gap: 0.45em;
+}
+
 .mtg-combo-name {
 	font-size: 1.4em;
 	font-weight: 700;
 	color: var(--text-normal);
 	line-height: 1.2;
+}
+
+.mtg-combo-infinite-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 0.72em;
+	font-weight: 800;
+	line-height: 1;
+	color: var(--text-accent);
+	border: 1px solid var(--text-accent);
+	padding: 0.2em 0.45em;
+	border-radius: 999px;
+	flex-shrink: 0;
+}
+
+.mtg-combo-infinite-badge-line {
+	font-size: 0.85em;
+	padding: 0.12em 0.38em;
 }
 
 .mtg-combo-result {
@@ -659,22 +749,39 @@
 }
 
 .mtg-combo-body {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-	gap: 0.9em 1.2em;
+	display: flex;
+	flex-direction: column;
+	gap: 0.9em;
 }
 
-.mtg-combo-section-loop,
-.mtg-combo-section-interact,
-.mtg-combo-section-notes,
-.mtg-combo-section-break {
-	grid-column: 1 / -1;
+.mtg-combo-section-setup {
+	display: flex;
+	flex-direction: column;
+	gap: 0.7em;
+	min-width: 0;
 }
 
-@media (max-width: 600px) {
-	.mtg-combo-body {
-		grid-template-columns: 1fr;
-	}
+.mtg-combo-subsection {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25em;
+	padding-left: 0.6em;
+	border-left: 2px solid var(--background-modifier-border);
+	min-width: 0;
+}
+
+.mtg-combo-subsection-battlefield { border-left-color: var(--mtg-combo-battlefield); }
+.mtg-combo-subsection-hand { border-left-color: var(--mtg-combo-hand); }
+.mtg-combo-subsection-prereqs { border-left-color: var(--mtg-combo-prereqs); }
+.mtg-combo-subsection-steps { border-left-color: var(--mtg-combo-line); }
+.mtg-combo-subsection-notes { border-left-color: var(--background-modifier-border); }
+
+.mtg-combo-subsection-title {
+	font-size: 0.7em;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--text-muted);
+	font-weight: 700;
 }
 
 .mtg-combo-section {
@@ -814,6 +921,76 @@
 
 .mtg-combo-break-item {
 	color: var(--text-normal);
+}
+
+/* Lines / variants */
+
+.mtg-combo-lines {
+	display: flex;
+	flex-direction: column;
+	gap: 0.45em;
+	padding-top: 0.6em;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.mtg-combo-lines > .mtg-combo-section-title {
+	margin-bottom: 0.1em;
+}
+
+.mtg-combo-lines-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.55em;
+}
+
+.mtg-combo-line {
+	display: flex;
+	flex-direction: column;
+	gap: 0.4em;
+	padding: 0.55em 0.7em 0.65em;
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-left: 3px solid var(--mtg-combo-line);
+	border-radius: 6px;
+}
+
+.mtg-combo-line-header {
+	display: flex;
+	align-items: baseline;
+	gap: 0.45em;
+	flex-wrap: wrap;
+}
+
+.mtg-combo-line-badge {
+	font-size: 0.7em;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--text-on-accent, #fff);
+	background: var(--mtg-combo-line);
+	padding: 0.15em 0.5em;
+	border-radius: 999px;
+	font-weight: 700;
+	flex-shrink: 0;
+}
+
+.mtg-combo-line-sep {
+	color: var(--text-faint);
+}
+
+.mtg-combo-line-name {
+	font-weight: 600;
+	color: var(--text-normal);
+	min-width: 0;
+}
+
+.mtg-combo-line-body {
+	display: flex;
+	flex-direction: column;
+	gap: 0.55em;
+}
+
+.mtg-combo-line-body > .mtg-combo-subsection {
+	min-width: 0;
 }
 
 /* ============================================================ */

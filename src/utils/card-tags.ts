@@ -1,6 +1,7 @@
 export interface CardTagDefinition {
 	id: string;
 	label: string;
+	shortLabel: string;
 	icon: string;
 	colorVar: string;
 }
@@ -45,66 +46,77 @@ export const CARD_TAG_DEFINITIONS: Record<string, CardTagDefinition> = {
 	ramp: {
 		id: "ramp",
 		label: "Ramp / mana acceleration",
+		shortLabel: "Ramp",
 		icon: "sprout",
 		colorVar: "--mtg-tag-ramp",
 	},
 	draw: {
 		id: "draw",
 		label: "Card draw",
+		shortLabel: "Draw",
 		icon: "plus",
 		colorVar: "--mtg-tag-draw",
 	},
 	removal: {
 		id: "removal",
 		label: "Targeted removal",
+		shortLabel: "Removal",
 		icon: "target",
 		colorVar: "--mtg-tag-removal",
 	},
 	boardwipe: {
 		id: "boardwipe",
 		label: "Board wipe / sweeper",
+		shortLabel: "Wipes",
 		icon: "bomb",
 		colorVar: "--mtg-tag-boardwipe",
 	},
 	counterspell: {
 		id: "counterspell",
 		label: "Counterspell",
+		shortLabel: "Counters",
 		icon: "shield",
 		colorVar: "--mtg-tag-counterspell",
 	},
 	recursion: {
 		id: "recursion",
 		label: "Recursion / reanimate",
+		shortLabel: "Recursion",
 		icon: "rotate-ccw",
 		colorVar: "--mtg-tag-recursion",
 	},
 	tutor: {
 		id: "tutor",
 		label: "Tutor",
+		shortLabel: "Tutors",
 		icon: "search",
 		colorVar: "--mtg-tag-tutor",
 	},
 	protection: {
 		id: "protection",
 		label: "Protection",
+		shortLabel: "Protection",
 		icon: "shield-check",
 		colorVar: "--mtg-tag-protection",
 	},
 	wincon: {
 		id: "wincon",
 		label: "Win condition / threat",
+		shortLabel: "Wincons",
 		icon: "trophy",
 		colorVar: "--mtg-tag-wincon",
 	},
 	combo: {
 		id: "combo",
 		label: "Combo piece",
+		shortLabel: "Combo",
 		icon: "link",
 		colorVar: "--mtg-tag-combo",
 	},
 	utility: {
 		id: "utility",
 		label: "Utility",
+		shortLabel: "Utility",
 		icon: "wrench",
 		colorVar: "--mtg-tag-utility",
 	},
@@ -113,6 +125,7 @@ export const CARD_TAG_DEFINITIONS: Record<string, CardTagDefinition> = {
 export interface ResolvedCardTag {
 	id: string;
 	label: string;
+	shortLabel: string;
 	icon: string;
 	colorVar: string;
 	custom: boolean;
@@ -128,6 +141,7 @@ export function resolveCardTag(raw: string): ResolvedCardTag {
 	return {
 		id: lower,
 		label: raw,
+		shortLabel: raw,
 		icon: "tag",
 		colorVar: "--mtg-tag-custom",
 		custom: true,

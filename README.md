@@ -25,7 +25,7 @@ An [Obsidian](https://obsidian.md) plugin that turns fenced ` ```decklist ` code
 - **Sideboard / maybeboard** – `# Sideboard`, `# SB`, `# Maybeboard`, `# Maybe` sections render separately and can start collapsed.
 - **Inline mana symbols** – Type things like `{2}{W}{U}` in any note and they render as Scryfall mana icons (works in Reading view and Live Preview).
 - **Inline card links** – `` `mtg:Lightning Bolt` `` or `[Bolt](mtg:Lightning Bolt)` become hoverable card links that open Scryfall on click.
-- **Combo blocks** – Document combos in their own ` ```combo ` block: prerequisites, ordered steps, an optional loop diagram with a back-arrow for cyclical combos, "break out" steps, and counterplay notes.
+- **Combo blocks** – Document combos in their own ` ```combo ` block: prerequisites, ordered steps, an optional loop diagram with a back-arrow for cyclical combos, "break out" steps, counterplay notes, optional `infinite:` tags on the combo or per line, and multi-line variants.
 - **Moxfield import** – Drop a public Moxfield deck URL into a `decklist` block and the plugin fetches the cards for you. A small refresh button in the deck header (and a command) re-pulls the latest version.
 - **Exporters** – Copy the decklist under your cursor as Moxfield text or as an MTG Arena import via the command palette.
 - **Local cache** – Card data, Scryfall mana symbology, and fetched Moxfield decks are cached on disk so re-renders are instant and offline-friendly.
@@ -106,10 +106,29 @@ Each line inside a ` ```decklist ` block is one of:
 | `1x Lightning Bolt` | The `x` after the quantity is optional. |
 | `1 Sol Ring #ramp` | Tag a card with a role (see [Card role tags](#card-role-tags)). |
 | `# Creatures` | A manual section header. |
+| `# Commander` (or `# Commanders`) | Marks the cards under it as the deck's commander(s). |
+| `# Deck` | The default "main deck" section — useful right after `# Commander` to push remaining cards back into the auto-grouped pool. |
 | `# Sideboard` (or `# SB`, `# Side`) | A sideboard section. |
 | `# Maybeboard` (or `# Maybe`) | A maybeboard section. |
 | `// note` | A comment, ignored by the parser. |
 | Blank line | Section break (purely cosmetic). |
+
+The default grouping mode (`Respect manual, fall back to auto`) treats `# Commander`, `# Deck`, `# Sideboard`, and `# Maybeboard` as **structural** headers — they don't switch the deck into manual layout. So you can mark a commander explicitly and still get the rest of the deck auto-grouped by type:
+
+````markdown
+```decklist
+# Commander
+1 Atraxa, Praetors' Voice
+
+# Deck
+1 Sol Ring
+1 Llanowar Elves
+1 Cyclonic Rift
+…
+```
+````
+
+The moment you add a custom section like `# Creatures` or `# Spells`, auto-grouping switches off and the layout follows your headers exactly.
 
 ### Card role tags
 
@@ -266,20 +285,67 @@ notes:
 | --- | --- | --- |
 | `name` | text | Required. The combo's title. |
 | `result` | text | Optional. What the combo achieves. |
-| `prerequisites` | list | Cards/conditions needed before starting. |
+| `infinite` | flag | Optional. When `true`, `yes`, or empty after the colon, shows an **∞** badge on the combo header. Use `false` / `no` / `off` / `0` to turn off. Applies to the **top-level** combo when written before any `line:`; after a `line:` header it tags **that variant** only. |
+| `battlefield` | list | Cards / permanents that must already be in play. |
+| `hand` | list | Cards needed in hand (or library, graveyard, etc.) to assemble the combo. |
+| `prerequisites` | list | Other conditions (mana available, life total, graveyard size, …). |
 | `steps` | list | A linear sequence (rendered as a numbered list). |
 | `loop` | list | A cyclical sequence (rendered as a flow diagram). |
 | `break` | list | Ways to exit the loop on purpose. |
 | `interact` | list | How an opponent can disrupt the combo. |
 | `notes` | list | Extra context. |
+| `line` | header | Optional. Starts a new variant — see [Combo lines / variants](#combo-lines--variants) below. |
 
-List items use `- ` (one per line). Aliases are accepted: `prereqs`, `step`, `cycle`, `disrupt`, `outcome`, `win`, etc. Lines starting with `//` are comments. Any text inside any field can use the inline syntaxes:
+List items use `- ` (one per line). Aliases are accepted: `prereqs`, `step`, `cycle`, `disrupt`, `outcome`, `win`, `in-play` / `board` / `field` (= `battlefield`), `in-hand` / `cards` / `pieces` (= `hand`), `variant` / `variants` (= `line`), `inf` / `infinity` (= `infinite`), etc. Lines starting with `//` are comments. Any text inside any field can use the inline syntaxes:
 
 - `{R}`, `{2}{U}`, `{W/U}`, `{S}` … for mana symbols.
 - `` `mtg:Card Name` `` (in backticks) for a hoverable card link — same syntax as in regular notes.
 - `[Display](mtg:Card Name)` for a hoverable link with custom display text.
 
 > Use the backtick form so the card name's boundaries are unambiguous (e.g. `` `mtg:Worldgorger Dragon` in graveyard `` correctly links *Worldgorger Dragon* and leaves "in graveyard" as plain text).
+
+### Combo lines / variants
+
+When the same combo can fire with several different supporting cards, define a shared shell at the top of the block and then list each variant after a `line:` header. Everything that follows a `line:` header (battlefield / hand / prerequisites / steps / loop / break / notes) belongs to that variant until the next `line:` (or the end of the block).
+
+````markdown
+```combo
+name: Curiosity Effects + Vivi Ornitier
+result: Draw 3 cards per noncreature spell cast
+
+battlefield:
+  - `mtg:Vivi Ornitier`
+
+steps:
+  - Cast a noncreature spell.
+  - `mtg:Vivi Ornitier` triggers and pings the opponent.
+  - The "draw on damage" effect triggers; you draw cards.
+
+notes:
+  - Scales with storm turns and cheap noncreature spells.
+
+line: Curiosity package
+hand:
+  - `mtg:Curiosity`, `mtg:Tandem Lookout`, or `mtg:Ophidian Eye`
+notes:
+  - Each draws 3 cards per Vivi ping.
+
+line: Niv-Mizzet, Visionary
+battlefield:
+  - `mtg:Vivi Ornitier`
+  - `mtg:Niv-Mizzet, Visionary`
+notes:
+  - Niv-Mizzet's own ability is the draw trigger — no enchantment required.
+
+line: Embereth Blaze
+hand:
+  - `mtg:Embereth Blaze`
+notes:
+  - Exiles 3 cards off the top instead of drawing — useful as a wincon vs combo decks.
+```
+````
+
+Each line renders as its own mini-card under the main combo, auto-numbered "Line 1", "Line 2", … with the optional name shown next to the badge. Lines may carry `battlefield`, `hand`, `prerequisites`, `steps`, `loop`, `break`, `notes`, and `infinite` (shows an **∞** badge on that line’s header). `interact` always applies to the top-level combo regardless of where it appears in the source.
 
 ## Inline mana symbols
 

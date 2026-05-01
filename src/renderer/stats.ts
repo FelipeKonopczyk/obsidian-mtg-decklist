@@ -1,3 +1,4 @@
+import { CARD_TAG_DEFINITIONS, resolveCardTag } from "../utils/card-tags";
 import type { ResolvedSection } from "./grouping";
 
 export interface ManaCurveBucket {
@@ -10,10 +11,19 @@ export interface ColorBucket {
 	count: number;
 }
 
+export interface TagBucket {
+	id: string;
+	label: string;
+	shortLabel: string;
+	icon: string;
+	count: number;
+}
+
 export interface DeckStats {
 	manaCurve: ManaCurveBucket[];
 	colors: ColorBucket[];
 	typeDistribution: { type: string; count: number }[];
+	tagDistribution: TagBucket[];
 }
 
 const COLOR_ORDER = ["W", "U", "B", "R", "G", "C"];
@@ -26,6 +36,7 @@ export function computeStats(sections: ResolvedSection[]): DeckStats {
 	const curveMap = new Map<number, number>();
 	const colorMap = new Map<string, number>();
 	const typeMap = new Map<string, number>();
+	const tagMap = new Map<string, number>();
 
 	for (const section of sections) {
 		if (!isMainGameplaySection(section.kind)) continue;
@@ -33,6 +44,13 @@ export function computeStats(sections: ResolvedSection[]): DeckStats {
 			const typeLine = card?.type_line ?? entry.hints?.type_line;
 			const cmcVal = card?.cmc ?? entry.hints?.cmc;
 			const colorsVal = card?.color_identity ?? card?.colors ?? entry.hints?.color_identity ?? entry.hints?.colors;
+
+			for (const raw of entry.tags) {
+				const tag = resolveCardTag(raw);
+				if (tag.custom) continue;
+				tagMap.set(tag.id, (tagMap.get(tag.id) ?? 0) + entry.quantity);
+			}
+
 			if (typeLine === undefined && cmcVal === undefined && !colorsVal) continue;
 
 			const isLand = (typeLine ?? "").toLowerCase().includes("land");
@@ -69,10 +87,24 @@ export function computeStats(sections: ResolvedSection[]): DeckStats {
 		.map(([type, count]) => ({ type, count }))
 		.sort((a, b) => b.count - a.count);
 
+	const tagDistribution: TagBucket[] = Array.from(tagMap.entries())
+		.map(([id, count]) => {
+			const def = CARD_TAG_DEFINITIONS[id];
+			return {
+				id,
+				label: def?.label ?? id,
+				shortLabel: def?.shortLabel ?? id,
+				icon: def?.icon ?? "tag",
+				count,
+			};
+		})
+		.sort((a, b) => b.count - a.count);
+
 	return {
 		manaCurve,
 		colors,
 		typeDistribution,
+		tagDistribution,
 	};
 }
 

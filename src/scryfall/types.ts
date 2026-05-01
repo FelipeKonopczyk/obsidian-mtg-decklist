@@ -52,6 +52,7 @@ export interface ScryfallCard {
 	scryfall_uri?: string;
 	image_uris?: ScryfallImageUris;
 	card_faces?: ScryfallCardFace[];
+	layout?: string;
 	prices?: ScryfallPrices;
 	legalities?: ScryfallLegalities;
 }

@@ -1,5 +1,12 @@
 import { requestUrl } from "obsidian";
-import { PLUGIN_USER_AGENT, SCRYFALL_NAMED_FUZZY, SCRYFALL_REQUEST_SPACING_MS } from "../utils/constants";
+import {
+	PLUGIN_USER_AGENT,
+	SCRYFALL_NAMED_FUZZY,
+	SCRYFALL_REQUEST_SPACING_MS,
+	SCRYFALL_RETRY_BACKOFF_BASE_MS,
+	SCRYFALL_RETRY_BACKOFF_MAX_MS,
+	SCRYFALL_RETRY_MAX_ATTEMPTS,
+} from "../utils/constants";
 import { CardCache, normalizeCardName } from "./cache";
 import type { ScryfallCard } from "./types";
 
@@ -44,7 +51,7 @@ export class ScryfallClient {
 		return next;
 	}
 
-	private async doFetch(name: string): Promise<ScryfallCard | null> {
+	private async doFetch(name: string, attempt = 0): Promise<ScryfallCard | null> {
 		const url = `${SCRYFALL_NAMED_FUZZY}${encodeURIComponent(name)}`;
 		try {
 			const response = await requestUrl({
@@ -61,6 +68,25 @@ export class ScryfallClient {
 				this.cache.markNotFound(name);
 				return null;
 			}
+
+			if (isThrottleStatus(response.status)) {
+				if (attempt >= SCRYFALL_RETRY_MAX_ATTEMPTS) {
+					console.warn(
+						`[mtg-decklist] Scryfall ${response.status} for "${name}" after ${attempt} retries; giving up for now`,
+					);
+					return null;
+				}
+				const headerDelay = parseRetryAfterMs(response.headers);
+				const backoff = backoffDelay(attempt);
+				const delay = Math.max(headerDelay ?? 0, backoff);
+				console.info(
+					`[mtg-decklist] Scryfall ${response.status} for "${name}", retrying in ${delay}ms (attempt ${attempt + 1}/${SCRYFALL_RETRY_MAX_ATTEMPTS})`,
+				);
+				await sleep(delay);
+				this.lastRequestAt = Date.now();
+				return this.doFetch(name, attempt + 1);
+			}
+
 			if (response.status < 200 || response.status >= 300) {
 				return null;
 			}
@@ -76,6 +102,27 @@ export class ScryfallClient {
 			return null;
 		}
 	}
+}
+
+function isThrottleStatus(status: number): boolean {
+	return status === 429 || status === 503 || status === 502 || status === 504;
+}
+
+function parseRetryAfterMs(headers: Record<string, string> | undefined): number | null {
+	if (!headers) return null;
+	const raw = headers["retry-after"] ?? headers["Retry-After"];
+	if (!raw) return null;
+	const seconds = Number.parseInt(raw, 10);
+	if (Number.isFinite(seconds) && seconds > 0) {
+		return Math.min(SCRYFALL_RETRY_BACKOFF_MAX_MS, seconds * 1000);
+	}
+	return null;
+}
+
+function backoffDelay(attempt: number): number {
+	const exp = SCRYFALL_RETRY_BACKOFF_BASE_MS * Math.pow(2, attempt);
+	const jitter = Math.floor(Math.random() * 250);
+	return Math.min(SCRYFALL_RETRY_BACKOFF_MAX_MS, exp + jitter);
 }
 
 function sleep(ms: number): Promise<void> {

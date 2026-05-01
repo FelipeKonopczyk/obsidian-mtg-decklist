@@ -1,3 +1,4 @@
+import { DEFAULT_SECTION_TITLE } from "../parser/decklist-parser";
 import type { DecklistEntry, ParsedDecklist, Section } from "../parser/types";
 import type { ScryfallCard } from "../scryfall/types";
 import type { CardSortOrder, GroupingMode } from "../settings";
@@ -41,11 +42,16 @@ export function classifyByType(typeLine: string | undefined): string {
 }
 
 function shouldUseAuto(parsed: ParsedDecklist, mode: GroupingMode): boolean {
-	const onlyDefaultSection =
-		parsed.sections.length === 1 && parsed.sections[0]?.kind === "general" && parsed.sections[0]?.title === "Deck";
 	if (mode === "auto") return true;
 	if (mode === "manual") return false;
-	return onlyDefaultSection;
+	// `respect-manual`: only treat user-titled "general" headers as a manual layout signal.
+	// Structural sections — commander, sideboard, maybeboard, and the default "Deck" header —
+	// don't disable auto-grouping, so a deck can specify `# Commander` and still get the rest
+	// auto-grouped by type.
+	const hasCustomGroups = parsed.sections.some(
+		(s) => s.kind === "general" && s.title !== DEFAULT_SECTION_TITLE,
+	);
+	return !hasCustomGroups;
 }
 
 function resolveEntries(entries: DecklistEntry[], lookup: (name: string) => ScryfallCard | undefined): ResolvedEntry[] {
