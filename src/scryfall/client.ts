@@ -79,7 +79,7 @@ export class ScryfallClient {
 				const headerDelay = parseRetryAfterMs(response.headers);
 				const backoff = backoffDelay(attempt);
 				const delay = Math.max(headerDelay ?? 0, backoff);
-				console.info(
+				console.debug(
 					`[mtg-decklist] Scryfall ${response.status} for "${name}", retrying in ${delay}ms (attempt ${attempt + 1}/${SCRYFALL_RETRY_MAX_ATTEMPTS})`,
 				);
 				await sleep(delay);
