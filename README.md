@@ -6,9 +6,15 @@
 
 An [Obsidian](https://obsidian.md) plugin that turns fenced ` ```decklist ` code blocks into rich, Moxfield-style Magic: The Gathering decklists with Scryfall card data, hover/tap image previews, and at-a-glance deck stats. It also lets you sprinkle inline mana symbols and hoverable card links throughout your regular notes.
 
-![Decklist rendered as a Moxfield-style deck panel in Obsidian](./example.png)
+## Screenshots
 
-![Inline mana symbols and hoverable card links inside a regular note](./example2.png)
+Decklist rendered as a Moxfield-style deck panel:
+
+![MTG Decklist deck panel in Obsidian](assets/example.png)
+
+Inline mana symbols and hoverable card links in a regular note:
+
+![MTG Decklist inline mana and card links](assets/example2.png)
 
 > Card data and images are fetched from the public [Scryfall API](https://scryfall.com/docs/api). This plugin is unofficial fan content not affiliated with Wizards of the Coast.
 
