@@ -1,4 +1,4 @@
-import { Platform } from "obsidian";
+import { useTouchCardUi } from "../utils/touch-ui";
 import type { ImageQuality } from "../settings";
 import type { ScryfallCard } from "../scryfall/types";
 
@@ -58,14 +58,31 @@ export class CardPreview {
 		if (!url) return;
 
 		overlay.empty();
-		const img = overlay.createEl("img", { cls: "mtg-card-preview-img" });
+		const inner = overlay.createDiv({ cls: "mtg-card-preview-overlay-inner" });
+		const img = inner.createEl("img", { cls: "mtg-card-preview-img" });
 		img.src = url;
 		img.alt = card.name;
+
+		if (card.scryfall_uri) {
+			const actions = inner.createDiv({ cls: "mtg-card-preview-tap-actions" });
+			const open = actions.createEl("a", {
+				cls: "mtg-card-preview-open-scryfall",
+				text: "Open on Scryfall",
+				href: card.scryfall_uri,
+			});
+			open.setAttribute("target", "_blank");
+			open.setAttribute("rel", "noopener noreferrer");
+			open.addEventListener("click", (ev) => {
+				ev.stopPropagation();
+				this.hide();
+			});
+		}
+
 		overlay.removeClass("is-hidden");
 	}
 
 	show(card: ScryfallCard, anchor: HTMLElement, quality: ImageQuality): void {
-		if (Platform.isMobile) {
+		if (useTouchCardUi()) {
 			this.showTap(card, quality);
 		} else {
 			this.showHover(card, anchor, quality);

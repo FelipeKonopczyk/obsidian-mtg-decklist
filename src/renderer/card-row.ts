@@ -1,4 +1,4 @@
-import { Platform, setIcon } from "obsidian";
+import { setIcon } from "obsidian";
 import { renderCardManaCost, renderManaCost } from "../ui/mana-symbols";
 import type { CardPreview } from "../ui/card-preview";
 import type { SymbologyClient } from "../scryfall/symbology";
@@ -7,6 +7,7 @@ import type { ImageQuality, LegalityFormat } from "../settings";
 import { legalityNote } from "./legality";
 import type { ResolvedEntry } from "./grouping";
 import { resolveCardTag } from "../utils/card-tags";
+import { useTouchCardUi } from "../utils/touch-ui";
 
 const BASIC_LAND_NAMES = new Set([
 	"plains",
@@ -54,13 +55,27 @@ export function renderCardRow(parent: HTMLElement, resolved: ResolvedEntry, opts
 
 	const nameEl = row.createSpan({ cls: "mtg-card-name" });
 	if (card?.scryfall_uri) {
-		const link = nameEl.createEl("a", {
-			text: card.name,
-			href: card.scryfall_uri,
-			cls: "mtg-card-link",
-		});
-		link.setAttribute("target", "_blank");
-		link.setAttribute("rel", "noopener");
+		if (useTouchCardUi()) {
+			const link = nameEl.createEl("a", {
+				text: card.name,
+				href: "#",
+				cls: "mtg-card-link",
+			});
+			link.dataset.scryfallUri = card.scryfall_uri;
+			link.addEventListener("click", (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				opts.preview.show(card, link, opts.imageQuality);
+			});
+		} else {
+			const link = nameEl.createEl("a", {
+				text: card.name,
+				href: card.scryfall_uri,
+				cls: "mtg-card-link",
+			});
+			link.setAttribute("target", "_blank");
+			link.setAttribute("rel", "noopener");
+		}
 	} else if (card) {
 		nameEl.setText(card.name);
 	} else {
@@ -112,10 +127,13 @@ export function renderCardRow(parent: HTMLElement, resolved: ResolvedEntry, opts
 
 	if (!card) return;
 
-	if (Platform.isMobile) {
-		const onTap = () => opts.preview.show(card, row, opts.imageQuality);
+	if (useTouchCardUi()) {
+		const onRowTap = (e: Event) => {
+			if ((e.target as HTMLElement | null)?.closest("a.mtg-card-link")) return;
+			opts.preview.show(card, row, opts.imageQuality);
+		};
 		row.addClass("mtg-card-row-tappable");
-		opts.registerDom(row, "click", onTap as EventListener);
+		opts.registerDom(row, "click", onRowTap as EventListener);
 	} else {
 		const debounced = debounce(() => opts.preview.show(card, row, opts.imageQuality), opts.hoverDelayMs);
 		const onEnter = () => debounced.call();

@@ -1,4 +1,4 @@
-import { Platform } from "obsidian";
+import { useTouchCardUi } from "../utils/touch-ui";
 import type MtgDecklistPlugin from "../main";
 import { renderManaCost } from "../ui/mana-symbols";
 import { debounce } from "../utils/debounce";
@@ -132,9 +132,18 @@ export function createInlineCardLink(
 export function attachCardBehavior(el: HTMLAnchorElement, cardName: string, plugin: MtgDecklistPlugin): void {
 	const updateFromCard = (card: ScryfallCard) => {
 		el.removeClass("mtg-card-pending");
-		if (card.scryfall_uri) {
+		if (useTouchCardUi()) {
+			el.href = "#";
+			el.removeAttribute("target");
+			if (card.scryfall_uri) {
+				el.dataset.scryfallUri = card.scryfall_uri;
+			} else {
+				delete el.dataset.scryfallUri;
+			}
+		} else if (card.scryfall_uri) {
 			el.href = card.scryfall_uri;
 			el.setAttribute("target", "_blank");
+			delete el.dataset.scryfallUri;
 		}
 		el.setAttribute("title", card.type_line ? `${card.name} — ${card.type_line}` : card.name);
 	};
@@ -162,7 +171,7 @@ export function attachCardBehavior(el: HTMLAnchorElement, cardName: string, plug
 		return cached;
 	};
 
-	if (Platform.isMobile) {
+	if (useTouchCardUi()) {
 		el.addEventListener("click", (ev) => {
 			ev.preventDefault();
 			void ensureCard().then((card) => {
