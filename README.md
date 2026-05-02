@@ -421,5 +421,7 @@ Please be considerate of Scryfall's and Moxfield's free services and their respe
 
 This plugin is released under the **GNU General Public License v3.0 or later**. See [LICENSE](LICENSE) for the full text.
 
+## Support
+
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Z8Z31YAERO)
 
