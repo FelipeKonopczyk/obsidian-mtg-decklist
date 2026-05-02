@@ -67,7 +67,7 @@ export class CardPreview {
 			const actions = inner.createDiv({ cls: "mtg-card-preview-tap-actions" });
 			const open = actions.createEl("a", {
 				cls: "mtg-card-preview-open-scryfall",
-				text: "Open on Scryfall",
+				text: "Open on scryfall",
 				href: card.scryfall_uri,
 			});
 			open.setAttribute("target", "_blank");

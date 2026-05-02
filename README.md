@@ -17,14 +17,14 @@ An [Obsidian](https://obsidian.md) plugin that turns fenced ` ```decklist ` code
 - **Decklist code blocks** – Paste a Moxfield-style list inside a ` ```decklist ` block and it renders as a styled deck panel.
 - **Auto grouping** – Group cards automatically by type (Commander, Creature, Instant, Sorcery, Artifact, Enchantment, Planeswalker, Land, …) or honour your own `# Section` headers.
 - **Sorting** – Sort within each section by name, by CMC then name, or keep the order you typed.
-- **Card previews** – Hover (desktop) or tap (mobile) any card name for a full Scryfall image preview. On mobile, inline card taps show the preview only; use **Open on Scryfall** in the overlay to open the site (avoids the browser stealing the tap).
+- **Card previews** – Hover (desktop) or tap (mobile) any card name for a full Scryfall image preview. On mobile, inline card taps show the preview only; use **Open on scryfall** in the overlay to open the site (avoids the browser stealing the tap).
 - **Color identity & legality warnings** – Inline icons flag cards that break the deck's color identity or are not legal in your chosen format.
 - **Card role tags** – Manually tag cards with roles like `#ramp`, `#draw`, `#removal`, `#boardwipe`, `#counterspell`, `#wincon` (and your own custom tags) — each shows up as a small coloured icon next to the card name.
 - **Deck stats** – Mana curve, cards-by-color pie, and type breakdown rendered under the list.
 - **Commander-aware header** – Detects a `# Commander` section, shows the commander name, the deck's color combo (Azorius, Esper, Witch‑Maw, …), color pips, and total card count.
 - **Sideboard / maybeboard** – `# Sideboard`, `# SB`, `# Maybeboard`, `# Maybe` sections render separately and can start collapsed.
 - **Inline mana symbols** – Type things like `{2}{W}{U}` in any note and they render as Scryfall mana icons (works in Reading view and Live Preview).
-- **Inline card links** – `` `mtg:Lightning Bolt` `` or `[Bolt](mtg:Lightning Bolt)` become hoverable card links (desktop: click opens Scryfall; mobile: tap shows preview, then **Open on Scryfall** in the overlay).
+- **Inline card links** – `` `mtg:Lightning Bolt` `` or `[Bolt](mtg:Lightning Bolt)` become hoverable card links (desktop: click opens Scryfall; mobile: tap shows preview, then **Open on scryfall** in the overlay).
 - **Combo blocks** – Document combos in their own ` ```combo ` block: prerequisites, ordered steps, an optional loop diagram with a back-arrow for cyclical combos, "break out" steps, counterplay notes, optional `infinite:` tags on the combo or per line, and multi-line variants.
 - **Moxfield import** – Drop a public Moxfield deck URL into a `decklist` block and the plugin fetches the cards for you. A small refresh button in the deck header (and a command) re-pulls the latest version.
 - **Exporters** – Copy the decklist under your cursor as Moxfield text or as an MTG Arena import via the command palette.
@@ -364,7 +364,7 @@ When **Render inline card links** is enabled (default), two syntaxes become hove
 - `` `mtg:Lightning Bolt` `` – an inline code span starting with `mtg:`.
 - `[Bolt](mtg:Lightning Bolt)` – a Markdown link with the `mtg:` protocol (the link text is shown).
 
-**Desktop:** hover the link for an image preview; click the link to open the card on Scryfall. **Mobile:** tap the link for a full-screen image preview; tap **Open on Scryfall** below the art to open the site, or tap the dimmed backdrop to dismiss.
+**Desktop:** hover the link for an image preview; click the link to open the card on Scryfall. **Mobile:** tap the link for a full-screen image preview; tap **Open on scryfall** below the art to open the site, or tap the dimmed backdrop to dismiss.
 
 ## Settings
 
