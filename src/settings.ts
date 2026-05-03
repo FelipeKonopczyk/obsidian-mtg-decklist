@@ -182,7 +182,7 @@ export class MtgDecklistSettingTab extends PluginSettingTab {
 		cardSyntaxFrag.appendText("Render `mtg:Card Name` and [Display](mtg:Card Name) as hoverable card links. ");
 		cardSyntaxFrag.createEl("strong", { text: "Tip: " });
 		cardSyntaxFrag.appendText(
-			"Desktop: hover to preview the image; click the link to open Scryfall. Mobile: tap for preview only, then tap Open on Scryfall in the overlay to open the site.",
+			"Desktop: hover to preview the image; click the link to open in browser. Mobile: tap for preview only, then tap open in browser in the overlay to open the site.",
 		);
 
 		new Setting(containerEl)
