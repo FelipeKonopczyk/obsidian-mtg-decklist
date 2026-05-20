@@ -33,12 +33,12 @@ Inline mana symbols and hoverable card links in a regular note:
 - **Inline card links** – `` `mtg:Lightning Bolt` `` or `[Bolt](mtg:Lightning Bolt)` become hoverable card links (desktop: click opens Scryfall; mobile: tap shows preview, then **Open on Scryfall** in the overlay).
 - **Combo blocks** – Document combos in their own ` ```combo ` block: prerequisites, ordered steps, an optional loop diagram with a back-arrow for cyclical combos, "break out" steps, counterplay notes, optional `infinite:` tags on the combo or per line, and multi-line variants.
 - **Moxfield import** – Drop a public Moxfield deck URL into a `decklist` block and the plugin fetches the cards for you. A small refresh button in the deck header (and a command) re-pulls the latest version.
-- **Exporters** – Copy the decklist under your cursor as Moxfield text or as an MTG Arena import via the command palette.
+- **Exporters** – Export the decklist under your cursor as Moxfield text or as an MTG Arena import via the command palette (opens a modal to copy or insert at the cursor).
 - **Local cache** – Card data, Scryfall mana symbology, and fetched Moxfield decks are cached on disk so re-renders are instant and offline-friendly.
 
 ## Privacy
 
-This plugin **does not read** from your system clipboard. The only clipboard use is **write-only**, and only when you explicitly run a copy command (e.g. **Moxfield: copy decklist under cursor as text** or **Arena: copy decklist under cursor as import**). Card data is fetched from the public [Scryfall API](https://scryfall.com/docs/api) and, optionally, public Moxfield deck URLs you paste into a block. Nothing is sent to any server other than those endpoints.
+This plugin **does not access** your system clipboard. Export commands open a modal with the generated text so you can copy it yourself or insert it at the cursor. Card data is fetched from the public [Scryfall API](https://scryfall.com/docs/api) and, optionally, public Moxfield deck URLs you paste into a block. Nothing is sent to any server other than those endpoints.
 
 ## Installation
 

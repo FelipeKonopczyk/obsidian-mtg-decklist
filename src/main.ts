@@ -15,7 +15,7 @@ import type { CachedCardEntry } from "./scryfall/types";
 import { MoxfieldClient } from "./moxfield/client";
 import type { CachedMoxfieldDeck } from "./moxfield/types";
 import { extractMoxfieldId } from "./moxfield/url";
-import { copyToClipboardWithNotice } from "./utils/clipboard";
+import { DeckExportModal } from "./ui/deck-export-modal";
 
 interface PersistedData {
 	settings: MtgDecklistSettings;
@@ -71,16 +71,16 @@ export default class MtgDecklistPlugin extends Plugin {
 
 		this.addCommand({
 			id: "copy-decklist-as-moxfield",
-			name: "Moxfield: copy decklist under cursor as text",
+			name: "Moxfield: export decklist under cursor as text",
 			editorCheckCallback: (checking, editor) =>
-				this.copyDecklistUnderCursor(editor, checking, (parsed) => toMoxfieldText(parsed), "Moxfield text"),
+				this.exportDecklistUnderCursor(editor, checking, (parsed) => toMoxfieldText(parsed), "Moxfield export"),
 		});
 
 		this.addCommand({
 			id: "copy-decklist-as-arena",
-			name: "Arena: copy decklist under cursor as import",
+			name: "Arena: export decklist under cursor as import",
 			editorCheckCallback: (checking, editor) =>
-				this.copyDecklistUnderCursor(editor, checking, (parsed) => toArenaImport(parsed), "Arena import"),
+				this.exportDecklistUnderCursor(editor, checking, (parsed) => toArenaImport(parsed), "Arena export"),
 		});
 
 		this.addCommand({
@@ -154,17 +154,17 @@ export default class MtgDecklistPlugin extends Plugin {
 		return true;
 	}
 
-	private copyDecklistUnderCursor(
+	private exportDecklistUnderCursor(
 		editor: Editor,
 		checking: boolean,
 		transform: (parsed: ReturnType<typeof parseDecklist>) => string,
-		label: string,
+		title: string,
 	): boolean {
 		const block = findDecklistBlockAroundCursor(editor);
 		if (!block) return false;
 		if (checking) return true;
 		const parsed = parseDecklist(block);
-		copyToClipboardWithNotice(transform(parsed), `Copied as ${label}`);
+		new DeckExportModal(this.app, title, transform(parsed), editor).open();
 		return true;
 	}
 }
