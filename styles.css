@@ -128,8 +128,6 @@
 }
 
 .mtg-section {
-	break-inside: avoid;
-	page-break-inside: avoid;
 	margin-bottom: 0.45em;
 	display: block;
 }
@@ -180,8 +178,7 @@
 	display: grid;
 	grid-template-columns: 1.6em minmax(0, 1fr) auto auto auto;
 	align-items: center;
-	column-gap: 0.35em;
-	row-gap: 0;
+	gap: 0 0.35em;
 }
 
 /* Commander/singleton format: drop qty column, move tag icons to the leftmost slot */
@@ -193,7 +190,7 @@
 .mtg-section-lands .mtg-section-list {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
-	column-gap: 0.6em;
+	gap: 0.6em;
 }
 
 .mtg-section-lands .mtg-card-row {
@@ -206,7 +203,7 @@
 	grid-template-columns: subgrid;
 	grid-auto-flow: dense;
 	align-items: center;
-	column-gap: 0.35em;
+	gap: 0.35em;
 	padding: 0.05em 0.2em 0.05em 0.45em;
 	border-radius: 3px;
 	font-size: 0.95em;
@@ -579,7 +576,7 @@
 .mtg-type-row {
 	display: grid;
 	grid-template-columns: max-content max-content;
-	column-gap: 1em;
+	gap: 1em;
 	font-size: 0.85em;
 }
 
@@ -609,7 +606,7 @@
 .mtg-tag-row {
 	display: grid;
 	grid-template-columns: auto max-content max-content;
-	column-gap: 0.5em;
+	gap: 0.5em;
 	font-size: 0.85em;
 }
 
