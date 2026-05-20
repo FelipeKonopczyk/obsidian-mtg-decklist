@@ -7,6 +7,18 @@
 	--mtg-r: #f4a48a;
 	--mtg-g: #9bd3ae;
 	--mtg-c: #c2bbb6;
+	--mtg-tag-ramp: #4caf50;
+	--mtg-tag-draw: #2196f3;
+	--mtg-tag-removal: #e53935;
+	--mtg-tag-boardwipe: #c62828;
+	--mtg-tag-counterspell: #1976d2;
+	--mtg-tag-recursion: #8e44ad;
+	--mtg-tag-tutor: #d4a017;
+	--mtg-tag-protection: #cfd8dc;
+	--mtg-tag-wincon: #f9a825;
+	--mtg-tag-combo: #6a1b9a;
+	--mtg-tag-utility: #78909c;
+	--mtg-tag-custom: var(--text-muted);
 }
 
 .mtg-decklist {
@@ -98,13 +110,20 @@
 }
 
 .mtg-decklist-body {
-	column-count: 2;
-	column-gap: 1.2em;
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 1.2em;
+}
+
+.mtg-decklist-column {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
 }
 
 @media (max-width: 600px) {
 	.mtg-decklist-body {
-		column-count: 1;
+		grid-template-columns: 1fr;
 	}
 }
 
@@ -172,15 +191,13 @@
 
 /* Lands have no mana cost, so split their list into 2 sub-columns */
 .mtg-section-lands .mtg-section-list {
-	display: block;
-	column-count: 2;
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
 	column-gap: 0.6em;
 }
 
 .mtg-section-lands .mtg-card-row {
 	display: flex;
-	break-inside: avoid;
-	page-break-inside: avoid;
 }
 
 .mtg-card-row {
@@ -295,16 +312,16 @@
 	font-size: 0.75em;
 	font-weight: 700;
 	font-family: var(--font-monospace);
-	background: #ccc;
-	color: #222;
+	background: #cccccc;
+	color: #222222;
 	box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.2);
 	flex-shrink: 0;
 }
 
-.mtg-mana-symbol-img {
-	background: transparent !important;
-	box-shadow: none !important;
-	border-radius: 0 !important;
+.mtg-mana-cost .mtg-mana-symbol.mtg-mana-symbol-img {
+	background: transparent;
+	box-shadow: none;
+	border-radius: 0;
 	object-fit: contain;
 }
 
@@ -318,13 +335,13 @@
 
 .mtg-mana-w { background: #fffbd5; color: #5a4a00; }
 .mtg-mana-u { background: #aae0fa; color: #003a66; }
-.mtg-mana-b { background: #cbc2bf; color: #222; }
+.mtg-mana-b { background: #cbc2bf; color: #222222; }
 .mtg-mana-r { background: #f9aa8f; color: #5a1500; }
 .mtg-mana-g { background: #9bd3ae; color: #0a3d20; }
-.mtg-mana-c { background: #ccc2c0; color: #333; }
+.mtg-mana-c { background: #ccc2c0; color: #333333; }
 
 .mtg-mana-hybrid {
-	background: linear-gradient(135deg, var(--mtg-hybrid-a, #ccc) 50%, var(--mtg-hybrid-b, #ccc) 50%);
+	background: linear-gradient(135deg, var(--mtg-hybrid-a, #cccccc) 50%, var(--mtg-hybrid-b, #cccccc) 50%);
 }
 
 /* Card preview popover (desktop hover) */
@@ -341,7 +358,7 @@
 
 .mtg-card-preview.is-hidden,
 .mtg-card-preview-overlay.is-hidden {
-	display: none !important;
+	display: none;
 }
 
 .mtg-card-preview .mtg-card-preview-img {
@@ -410,6 +427,9 @@
 .mtg-stats-colors {
 	justify-self: center;
 	align-self: start;
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
 }
 
 .mtg-stats-types,
@@ -484,12 +504,6 @@
 	font-variant-numeric: tabular-nums;
 }
 
-.mtg-stats-colors {
-	display: flex;
-	flex-direction: column;
-	align-items: stretch;
-}
-
 .mtg-color-body {
 	display: flex;
 	align-items: center;
@@ -550,22 +564,22 @@
 }
 
 .mtg-stats-types {
-	display: inline-grid;
-	grid-template-columns: max-content max-content;
-	column-gap: 1em;
-	row-gap: 0.05em;
+	display: flex;
+	flex-direction: column;
+	gap: 0.05em;
 	width: fit-content;
 	align-self: start;
 }
 
 .mtg-stats-types .mtg-stats-title {
-	grid-column: 1 / -1;
 	margin-bottom: 0.3em;
 	text-align: center;
 }
 
 .mtg-type-row {
-	display: contents;
+	display: grid;
+	grid-template-columns: max-content max-content;
+	column-gap: 1em;
 	font-size: 0.85em;
 }
 
@@ -580,22 +594,22 @@
 }
 
 .mtg-stats-tags {
-	display: inline-grid;
-	grid-template-columns: max-content max-content max-content;
-	column-gap: 0.5em;
-	row-gap: 0.05em;
+	display: flex;
+	flex-direction: column;
+	gap: 0.05em;
 	width: fit-content;
 	align-self: start;
 }
 
 .mtg-stats-tags .mtg-stats-title {
-	grid-column: 1 / -1;
 	margin-bottom: 0.3em;
 	text-align: center;
 }
 
 .mtg-tag-row {
-	display: contents;
+	display: grid;
+	grid-template-columns: auto max-content max-content;
+	column-gap: 0.5em;
 	font-size: 0.85em;
 }
 
@@ -900,7 +914,7 @@
 	height: 1.5em;
 	border-radius: 50%;
 	background: var(--text-accent);
-	color: var(--text-on-accent, #fff);
+	color: var(--text-on-accent, #ffffff);
 	font-size: 0.75em;
 	font-weight: 700;
 	display: inline-flex;
@@ -984,7 +998,7 @@
 	font-size: 0.7em;
 	letter-spacing: 0.06em;
 	text-transform: uppercase;
-	color: var(--text-on-accent, #fff);
+	color: var(--text-on-accent, #ffffff);
 	background: var(--mtg-combo-line);
 	padding: 0.15em 0.5em;
 	border-radius: 999px;
@@ -1015,21 +1029,6 @@
 /* ============================================================ */
 /* Card role tags                                               */
 /* ============================================================ */
-
-.mtg-decklist {
-	--mtg-tag-ramp: #4caf50;
-	--mtg-tag-draw: #2196f3;
-	--mtg-tag-removal: #e53935;
-	--mtg-tag-boardwipe: #c62828;
-	--mtg-tag-counterspell: #1976d2;
-	--mtg-tag-recursion: #8e44ad;
-	--mtg-tag-tutor: #d4a017;
-	--mtg-tag-protection: #cfd8dc;
-	--mtg-tag-wincon: #f9a825;
-	--mtg-tag-combo: #6a1b9a;
-	--mtg-tag-utility: #78909c;
-	--mtg-tag-custom: var(--text-muted);
-}
 
 .mtg-card-tags {
 	display: inline-flex;
@@ -1086,7 +1085,14 @@
 	justify-self: end;
 }
 .mtg-card-row > .mtg-card-name { grid-column: 2; min-width: 0; }
-.mtg-card-row > .mtg-card-tags { grid-column: 3; justify-self: end; }
+.mtg-card-row > .mtg-card-tags {
+	grid-column: 3;
+	justify-self: end;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.2em;
+	min-height: 1em;
+}
 .mtg-card-row > .mtg-mana-cost { grid-column: 4; justify-self: end; }
 .mtg-card-row > .mtg-card-warning-legality { grid-column: 5; justify-self: end; }
 
@@ -1107,14 +1113,6 @@
 .mtg-section-lands .mtg-card-row > .mtg-card-warning-legality {
 	grid-column: auto;
 	justify-self: auto;
-}
-
-/* Tag column placeholder keeps width consistent even when empty */
-.mtg-card-row > .mtg-card-tags {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.2em;
-	min-height: 1em;
 }
 
 /* Inline count for basic lands (e.g. "Forest (10)") */

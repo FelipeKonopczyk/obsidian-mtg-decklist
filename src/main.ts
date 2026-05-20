@@ -15,6 +15,7 @@ import type { CachedCardEntry } from "./scryfall/types";
 import { MoxfieldClient } from "./moxfield/client";
 import type { CachedMoxfieldDeck } from "./moxfield/types";
 import { extractMoxfieldId } from "./moxfield/url";
+import { copyToClipboardWithNotice } from "./utils/clipboard";
 
 interface PersistedData {
 	settings: MtgDecklistSettings;
@@ -163,11 +164,7 @@ export default class MtgDecklistPlugin extends Plugin {
 		if (!block) return false;
 		if (checking) return true;
 		const parsed = parseDecklist(block);
-		const text = transform(parsed);
-		void navigator.clipboard.writeText(text).then(
-			() => new Notice(`Copied as ${label}`),
-			() => new Notice("Clipboard write failed"),
-		);
+		copyToClipboardWithNotice(transform(parsed), `Copied as ${label}`);
 		return true;
 	}
 }

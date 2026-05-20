@@ -36,6 +36,10 @@ Inline mana symbols and hoverable card links in a regular note:
 - **Exporters** – Copy the decklist under your cursor as Moxfield text or as an MTG Arena import via the command palette.
 - **Local cache** – Card data, Scryfall mana symbology, and fetched Moxfield decks are cached on disk so re-renders are instant and offline-friendly.
 
+## Privacy
+
+This plugin **does not read** from your system clipboard. The only clipboard use is **write-only**, and only when you explicitly run a copy command (e.g. **Moxfield: copy decklist under cursor as text** or **Arena: copy decklist under cursor as import**). Card data is fetched from the public [Scryfall API](https://scryfall.com/docs/api) and, optionally, public Moxfield deck URLs you paste into a block. Nothing is sent to any server other than those endpoints.
+
 ## Installation
 
 ### Manual install

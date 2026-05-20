@@ -84,9 +84,12 @@ export function renderDeckView(
 	renderHeader(container, parsed, plugin, deckColorIdentity, isCommanderDeck, commanderNames, options);
 
 	const body = container.createDiv({ cls: "mtg-decklist-body" });
-	for (const section of sections) {
-		renderSection(body, section, plugin, violations, isCommanderDeck);
-	}
+	const splitAt = Math.ceil(sections.length / 2);
+	const col1 = body.createDiv({ cls: "mtg-decklist-column" });
+	const col2 = body.createDiv({ cls: "mtg-decklist-column" });
+	sections.forEach((section, i) => {
+		renderSection(i < splitAt ? col1 : col2, section, plugin, violations, isCommanderDeck);
+	});
 
 	if (plugin.settings.showStats) {
 		const stats = computeStats(sections);
