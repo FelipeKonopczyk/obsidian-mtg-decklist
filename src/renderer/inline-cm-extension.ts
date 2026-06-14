@@ -26,7 +26,7 @@ class ManaWidget extends WidgetType {
 	}
 
 	toDOM(): HTMLElement {
-		const span = document.createElement("span");
+		const span = activeDocument.createElement("span");
 		span.className = "mtg-inline-mana";
 		renderManaCost(span, `{${this.token}}`, this.plugin.symbology);
 		return span;

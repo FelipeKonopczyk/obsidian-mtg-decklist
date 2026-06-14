@@ -178,7 +178,7 @@ export class MtgDecklistSettingTab extends PluginSettingTab {
 				}),
 			);
 
-		const cardSyntaxFrag = document.createDocumentFragment();
+		const cardSyntaxFrag = activeDocument.createDocumentFragment();
 		cardSyntaxFrag.appendText("Render `mtg:Card Name` and [Display](mtg:Card Name) as hoverable card links. ");
 		cardSyntaxFrag.createEl("strong", { text: "Tip: " });
 		cardSyntaxFrag.appendText(

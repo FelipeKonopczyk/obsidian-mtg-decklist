@@ -423,15 +423,15 @@ interface CardLoadingBanner {
 }
 
 function renderCardLoadingBanner(container: HTMLElement, total: number): CardLoadingBanner {
-	const root = document.createElement("div");
+	const root = activeDocument.createElement("div");
 	root.className = "mtg-decklist-card-loading";
 
-	const spinner = document.createElement("span");
+	const spinner = activeDocument.createElement("span");
 	spinner.className = "mtg-decklist-loading-spinner";
 	setIcon(spinner, "loader-2");
 	root.appendChild(spinner);
 
-	const label = document.createElement("span");
+	const label = activeDocument.createElement("span");
 	label.className = "mtg-decklist-card-loading-label";
 	label.textContent = `Loading 0 / ${total} cards…`;
 	root.appendChild(label);

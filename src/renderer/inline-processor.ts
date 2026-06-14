@@ -25,7 +25,7 @@ export function registerInlineProcessor(plugin: MtgDecklistPlugin): void {
 }
 
 function processManaInTextNodes(root: HTMLElement, plugin: MtgDecklistPlugin): void {
-	const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+	const walker = activeDocument.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
 		acceptNode(node) {
 			const text = node.nodeValue;
 			if (!text || text.indexOf("{") === -1) return NodeFilter.FILTER_REJECT;
@@ -57,16 +57,16 @@ function isSkippedAncestor(el: HTMLElement): boolean {
 
 function replaceTextNodeWithMana(node: Text, plugin: MtgDecklistPlugin): void {
 	const value = node.nodeValue ?? "";
-	const frag = document.createDocumentFragment();
+	const frag = activeDocument.createDocumentFragment();
 	let lastIndex = 0;
 
 	MANA_TOKEN_RE.lastIndex = 0;
 	let m: RegExpExecArray | null;
 	while ((m = MANA_TOKEN_RE.exec(value)) !== null) {
 		if (m.index > lastIndex) {
-			frag.appendChild(document.createTextNode(value.slice(lastIndex, m.index)));
+			frag.appendChild(activeDocument.createTextNode(value.slice(lastIndex, m.index)));
 		}
-		const wrapper = document.createElement("span");
+		const wrapper = activeDocument.createElement("span");
 		wrapper.className = "mtg-inline-mana";
 		renderManaCost(wrapper, `{${m[1]}}`, plugin.symbology);
 		frag.appendChild(wrapper);
@@ -76,7 +76,7 @@ function replaceTextNodeWithMana(node: Text, plugin: MtgDecklistPlugin): void {
 	if (lastIndex === 0) return;
 
 	if (lastIndex < value.length) {
-		frag.appendChild(document.createTextNode(value.slice(lastIndex)));
+		frag.appendChild(activeDocument.createTextNode(value.slice(lastIndex)));
 	}
 	node.replaceWith(frag);
 }
@@ -119,7 +119,7 @@ export function createInlineCardLink(
 	displayText: string | undefined,
 	plugin: MtgDecklistPlugin,
 ): HTMLAnchorElement {
-	const anchor = document.createElement("a");
+	const anchor = activeDocument.createElement("a");
 	anchor.className = "mtg-inline-card";
 	anchor.textContent = displayText ?? cardName;
 	anchor.dataset.cardName = cardName;

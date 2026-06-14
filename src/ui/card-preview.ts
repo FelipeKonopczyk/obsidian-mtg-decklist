@@ -11,14 +11,14 @@ export class CardPreview {
 
 	private ensureEl(): HTMLElement {
 		if (this.el) return this.el;
-		const el = document.body.createDiv({ cls: "mtg-card-preview is-hidden" });
+		const el = activeDocument.body.createDiv({ cls: "mtg-card-preview is-hidden" });
 		this.el = el;
 		return el;
 	}
 
 	private ensureOverlay(): HTMLElement {
 		if (this.overlay) return this.overlay;
-		const overlay = document.body.createDiv({ cls: "mtg-card-preview-overlay is-hidden" });
+		const overlay = activeDocument.body.createDiv({ cls: "mtg-card-preview-overlay is-hidden" });
 		overlay.addEventListener("click", () => this.hide());
 		this.overlay = overlay;
 		return overlay;

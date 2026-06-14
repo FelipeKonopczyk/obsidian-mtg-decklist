@@ -257,8 +257,8 @@ function scheduleArcLayout(wrap: HTMLElement, arc: SVGSVGElement, stepEls: HTMLE
 
 		while (arc.firstChild) arc.removeChild(arc.firstChild);
 
-		const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
-		const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
+		const defs = activeDocument.createElementNS("http://www.w3.org/2000/svg", "defs");
+		const marker = activeDocument.createElementNS("http://www.w3.org/2000/svg", "marker");
 		marker.setAttribute("id", markerId);
 		marker.setAttribute("viewBox", "0 0 10 10");
 		marker.setAttribute("refX", "8");
@@ -266,14 +266,14 @@ function scheduleArcLayout(wrap: HTMLElement, arc: SVGSVGElement, stepEls: HTMLE
 		marker.setAttribute("markerWidth", "6");
 		marker.setAttribute("markerHeight", "6");
 		marker.setAttribute("orient", "auto-start-reverse");
-		const tri = document.createElementNS("http://www.w3.org/2000/svg", "path");
+		const tri = activeDocument.createElementNS("http://www.w3.org/2000/svg", "path");
 		tri.setAttribute("d", "M0,0 L10,5 L0,10 z");
 		tri.setAttribute("class", "mtg-combo-loop-arrow-head");
 		marker.appendChild(tri);
 		defs.appendChild(marker);
 		arc.appendChild(defs);
 
-		const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+		const path = activeDocument.createElementNS("http://www.w3.org/2000/svg", "path");
 		const d = `M ${startX} ${endY} C ${farX} ${endY - cpOffset}, ${farX} ${startY + cpOffset}, ${startX} ${startY}`;
 		path.setAttribute("d", d);
 		path.setAttribute("fill", "none");
@@ -282,7 +282,7 @@ function scheduleArcLayout(wrap: HTMLElement, arc: SVGSVGElement, stepEls: HTMLE
 		arc.appendChild(path);
 	};
 
-	requestAnimationFrame(() => requestAnimationFrame(draw));
+	window.requestAnimationFrame(() => window.requestAnimationFrame(draw));
 
 	if (typeof ResizeObserver !== "undefined") {
 		const ro = new ResizeObserver(() => draw());
@@ -353,16 +353,16 @@ function renderManaInto(container: HTMLElement, text: string, plugin: MtgDecklis
 	let foundAny = false;
 	while ((m = MANA_TOKEN_RE.exec(text)) !== null) {
 		foundAny = true;
-		if (m.index > last) container.appendChild(document.createTextNode(text.slice(last, m.index)));
-		const wrapper = document.createElement("span");
+		if (m.index > last) container.appendChild(activeDocument.createTextNode(text.slice(last, m.index)));
+		const wrapper = activeDocument.createElement("span");
 		wrapper.className = "mtg-inline-mana";
 		renderManaCost(wrapper, `{${m[1]}}`, plugin.symbology);
 		container.appendChild(wrapper);
 		last = m.index + m[0].length;
 	}
 	if (!foundAny) {
-		container.appendChild(document.createTextNode(text));
+		container.appendChild(activeDocument.createTextNode(text));
 	} else if (last < text.length) {
-		container.appendChild(document.createTextNode(text.slice(last)));
+		container.appendChild(activeDocument.createTextNode(text.slice(last)));
 	}
 }
