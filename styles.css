@@ -195,6 +195,10 @@
 
 .mtg-section-lands .mtg-card-row {
 	display: flex;
+	/* Reset the full-width span inherited from .mtg-card-row so each land
+	   occupies a single cell of the 2-column land grid instead of spanning
+	   both columns (which collapsed the section into one column). */
+	grid-column: auto;
 }
 
 .mtg-card-row {
