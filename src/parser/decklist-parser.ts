@@ -106,7 +106,8 @@ function parseEntryLine(line: string, lineNumber: number): DecklistEntry | Deckl
 	const match = trimmed.match(/^(\d+)\s*[xX]?\s+(.+)$/);
 	if (match) {
 		const quantity = Number.parseInt(match[1] ?? "0", 10);
-		const { name, tags } = extractTrailingTags(match[2] ?? "");
+		const { name: tagged, tags } = extractTrailingTags(match[2] ?? "");
+		const { name, set, collectorNumber } = extractPrint(tagged);
 		if (!name) {
 			return {
 				lineNumber,
@@ -117,6 +118,8 @@ function parseEntryLine(line: string, lineNumber: number): DecklistEntry | Deckl
 		return {
 			quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
 			name,
+			set,
+			collectorNumber,
 			rawLine: line,
 			lineNumber,
 			tags,
@@ -124,10 +127,13 @@ function parseEntryLine(line: string, lineNumber: number): DecklistEntry | Deckl
 	}
 
 	if (/^[A-Za-z]/.test(trimmed)) {
-		const { name, tags } = extractTrailingTags(trimmed);
+		const { name: tagged, tags } = extractTrailingTags(trimmed);
+		const { name, set, collectorNumber } = extractPrint(tagged);
 		return {
 			quantity: 1,
 			name,
+			set,
+			collectorNumber,
 			rawLine: line,
 			lineNumber,
 			tags,
@@ -144,6 +150,18 @@ function parseEntryLine(line: string, lineNumber: number): DecklistEntry | Deckl
 function isError(value: DecklistEntry | DecklistError): value is DecklistError {
 	return (value as DecklistError).message !== undefined;
 }
+
+function extractPrint(name: string): { name: string; set?: string; collectorNumber?: string } {
+	const m = name.match(/^(.*\S)\s+\(([A-Za-z0-9]{2,6})\)\s+([^\s()]+)$/);
+	if (!m) return { name: name.trim() };
+	return {
+		name: (m[1] ?? "").trim(),
+		set: (m[2] ?? "").toLowerCase(),
+		collectorNumber: m[3] ?? "",
+	};
+}
+
+
 
 export function parseDecklist(source: string): ParsedDecklist {
 	const lines = source.split(/\r?\n/);
