@@ -39,6 +39,25 @@ export class ScryfallClient {
 		}
 	}
 
+	async fetchCardByPrint(set: string, collectorNumber: string): Promise<ScryfallCard | null> {
+		const cacheKey = printCacheKey(set, collectorNumber);
+		const cached = this.cache.get(cacheKey);
+		if (cached) return cached;
+		if (this.cache.hasNotFound(cacheKey)) return null;
+	
+		const existing = this.inflight.get(cacheKey);
+		if (existing) return existing;
+	
+		const promise = this.enqueue(() => this.doFetchPrint(set, collectorNumber, cacheKey));
+		this.inflight.set(cacheKey, promise);
+		try {
+			return await promise;
+		} finally {
+			this.inflight.delete(cacheKey);
+		}
+	}
+
+
 	private enqueue<T>(task: () => Promise<T>): Promise<T> {
 		const next = this.queue.then(async () => {
 			const since = Date.now() - this.lastRequestAt;
@@ -102,6 +121,54 @@ export class ScryfallClient {
 			return null;
 		}
 	}
+
+	private async doFetchPrint(
+		set: string,
+		collectorNumber: string,
+		cacheKey: string,
+		attempt = 0,
+	): Promise<ScryfallCard | null> {
+		const url = `${SCRYFALL_CARDS}${encodeURIComponent(set.toLowerCase())}/${encodeURIComponent(collectorNumber)}`;
+		try {
+			const response = await requestUrl({
+				url,
+				method: "GET",
+				headers: { Accept: "application/json", "User-Agent": PLUGIN_USER_AGENT },
+				throw: false,
+			});
+	
+			if (response.status === 404) {
+				this.cache.markNotFound(cacheKey);
+				return null;
+			}
+	
+			if (isThrottleStatus(response.status)) {
+				if (attempt >= SCRYFALL_RETRY_MAX_ATTEMPTS) {
+					console.warn(`[mtg-decklist] Scryfall ${response.status} for "${cacheKey}" after ${attempt} retries; giving up`);
+					return null;
+				}
+				const headerDelay = parseRetryAfterMs(response.headers);
+				const delay = Math.max(headerDelay ?? 0, backoffDelay(attempt));
+				await sleep(delay);
+				this.lastRequestAt = Date.now();
+				return this.doFetchPrint(set, collectorNumber, cacheKey, attempt + 1);
+			}
+	
+			if (response.status < 200 || response.status >= 300) return null;
+	
+			const card = response.json as ScryfallCard | undefined;
+			if (!card || !card.name) return null;
+	
+			// Cache under the print key ONLY. Do not write card.name here, or a later
+			// bare "Sol Ring" lookup could resolve to this specific print.
+			this.cache.set(cacheKey, card);
+			return card;
+		} catch (err) {
+			console.warn("[mtg-decklist] Scryfall print request failed", set, collectorNumber, err);
+			return null;
+		}
+	}
+	
 }
 
 function isThrottleStatus(status: number): boolean {
@@ -127,4 +194,8 @@ function backoffDelay(attempt: number): number {
 
 function sleep(ms: number): Promise<void> {
 	return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function printCacheKey(set: string, collectorNumber: string): string {
+	return `print:${set.toLowerCase()}/${collectorNumber.toLowerCase()}`;
 }
