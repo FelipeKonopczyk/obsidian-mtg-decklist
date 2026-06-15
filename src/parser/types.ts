@@ -15,6 +15,8 @@ export interface DecklistEntry {
 	lineNumber: number;
 	tags: string[];
 	hints?: DecklistEntryHints;
+	set?: string;
+	collectorNumber?: string;
 }
 
 export interface Section {
